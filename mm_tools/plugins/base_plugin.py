@@ -1,9 +1,10 @@
 import io
 import json
+from functools import lru_cache
 
 import aiosqlite
 from mattermostautodriver.exceptions import NotEnoughPermissions
-from mmpy_bot import Plugin, ActionEvent
+from mmpy_bot import Plugin, ActionEvent, Message
 from mmpy_bot.driver import Driver
 from mmpy_bot.wrappers import EventWrapper
 
@@ -143,6 +144,49 @@ class BasePlugin(Plugin):
                 'file_ids': files_ids
             }
         )
+
+    @lru_cache
+    def get_user_info(self, user_id: str) -> dict:
+        return self.driver.users.get_user(user_id=user_id)
+
+    @lru_cache
+    def get_user_name(self, user_id: str):
+        return self.get_user_info(user_id)['username']
+
+    @lru_cache
+    def get_user_full_name(self, user_id: str) -> str:
+        user_info = self.get_user_info(user_id)
+        return f'{user_info["first_name"]} {user_info["last_name"]}'
+
+    @lru_cache
+    def get_direct_from_user(self, user_id: str) -> str:
+        return self.driver.channels.create_direct_channel([self.driver.user_id, user_id])["id"]
+
+    def message_to_action_event(self, message: Message, context: dict = None, post_id: str = None):
+        action_event = ActionEvent(
+            body={
+                'channel_id': message.channel_id,
+                'context': context or {},
+                'post_id': post_id,
+                'user_id': message.user_id,
+                'user_name': self.get_user_name(message.user_id),
+                'team_id': message.team_id
+            },
+            request_id='',
+            webhook_id=''
+        )
+        return action_event
+
+    def send_files_from_message(self, message: Message, channel_id: str) -> list[str]:
+        return [
+            self.driver.files.upload_file(
+                data={'channel_id': channel_id},
+                files={
+                    'files': (file['name'], self.driver.files.get_file(file['id']).content)
+                }
+            )['file_infos'][0]['id']
+            for file in message.body['data']['post']['metadata']['files']
+        ]
 
     @staticmethod
     async def init_tables():
