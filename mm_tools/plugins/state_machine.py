@@ -38,10 +38,40 @@ def on_state(states: list):
                 plugin,
                 message_or_event
         ):
+            state_db = await plugin.state.get_state(message_or_event.user_id)
+
             for state in states:
-                if state in (plugin.state.get_state(message_or_event.user_id) or ''):
+                if not state and not state_db:
                     return await func(plugin, message_or_event)
 
+                if not state and state_db:
+                    return
+
+                if state in (state_db or ''):
+                    return await func(plugin, message_or_event)
+
+        return wrapper
+
+    return decorator
+
+
+def on_filter(filters: list):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(
+                plugin,
+                message_or_event
+        ):
+            for f in filters:
+                if asyncio.iscoroutinefunction(f):
+                    if not await f(message_or_event, plugin.driver):
+                        return
+
+                else:
+                    if not f(message_or_event, plugin.driver):
+                        return
+
+            return await func(plugin, message_or_event)
         return wrapper
 
     return decorator
