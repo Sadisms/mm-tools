@@ -1,4 +1,3 @@
-import asyncio
 from functools import wraps
 
 
@@ -39,7 +38,7 @@ def on_state(states: list):
                 plugin,
                 message_or_event
         ):
-            state_db = await plugin.state.get_state(message_or_event.user_id)
+            state_db = plugin.state.get_state(message_or_event.user_id)
 
             for state in states:
                 if not state and not state_db:
