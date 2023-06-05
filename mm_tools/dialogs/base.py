@@ -63,14 +63,14 @@ class CheckBoxElement(DialogElement):
             self,
             display_name: str,
             element_id: str,
-            default: str = 'false',
+            default: bool = False,
             optional: bool = False
     ):
         super().__init__()
         self.type = 'bool'
         self.display_name = display_name
         self.element_id = element_id
-        self.default = default
+        self.default = str(default).lower()
         self.optional = optional
 
 
