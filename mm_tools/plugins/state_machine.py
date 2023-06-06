@@ -1,5 +1,5 @@
+import asyncio
 from functools import wraps
-
 
 class StateMachine:
     state_data = {}
