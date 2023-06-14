@@ -108,13 +108,15 @@ class Attachment:
             actions: List[Union[Button, Select]] = None,
             text: str = None,
             title: str = None,
-            title_link: str = None
+            title_link: str = None,
+            color: str = None
     ):
         self.actions = actions or []
         self.fields = fields or []
         self.text = text
         self.title_link = title_link
         self.title = title
+        self.color = color
 
     def to_dict(self) -> dict:
         attachments = {'attachments': [{}]}
@@ -139,6 +141,9 @@ class Attachment:
 
             if self.title_link:
                 attachments['attachments'][0]['title_link'] = self.title_link
+
+        if self.color:
+            attachments['attachments'][0]['color'] = self.color
 
         return attachments
 
