@@ -64,7 +64,7 @@ class StateMachine:
 
     @staticmethod
     async def set_value_from_db(user_id: str, **kw):
-        old_value = StateMachine.get_value_from_db(user_id)
+        old_value = await StateMachine.get_value_from_db(user_id)
         new_value = json.dumps({**kw, **old_value}, ensure_ascii=False)
 
         async with aiosqlite.connect(StateMachine.db_name) as db:
