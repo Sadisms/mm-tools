@@ -70,16 +70,12 @@ class StateMachine:
         async with aiosqlite.connect(StateMachine.db_name) as db:
             await db.execute(
                 """
-                    IF EXISTS(SELECT * FROM plugins_cache_state WHERE user_id = ?)
-                       UPDATE plugins_cache_state 
-                       SET cache = ?
-                       WHERE id = ?
-                       
-                    ELSE
-                       INSERT INTO plugins_cache_state("user_id", "cache") 
-                       values(?, ?);
+                   INSERT INTO plugins_cache_state("user_id", "cache") 
+                   values(?, ?)
+                   ON DUPLICATE KEY 
+                   UPDATE cache = ?;
                 """,
-                [user_id, new_value, user_id, user_id, new_value]
+                [user_id, new_value,  new_value]
             )
             await db.commit()
 
