@@ -1,8 +1,13 @@
 import asyncio
+import json
 from functools import wraps
+
+import aiosqlite
+
 
 class StateMachine:
     state_data = {}
+    db_name = '.plugins.db'
 
     def set_state(self, user_id: str, state: str | None) -> None:
         self.state_data[user_id] = {
@@ -29,6 +34,66 @@ class StateMachine:
     def clear_values(self, user_id):
         if self.state_data[user_id].get('cache'):
             self.state_data[user_id].pop('cache')
+
+    @staticmethod
+    async def init_tables():
+        async with aiosqlite.connect(StateMachine.db_name) as db:
+            await db.execute(
+                """
+                    CREATE TABLE IF NOT EXISTS "plugins_cache_state" (
+                        "user_id" VARCHAR(255) NOT NULL PRIMARY KEY, 
+                        "cache" TEXT
+                    );
+                """
+            )
+            await db.commit()
+
+    @staticmethod
+    async def get_value_from_db(user_id: str) -> dict:
+        async with aiosqlite.connect(StateMachine.db_name) as db:
+            async with db.execute(
+                    """
+                        SELECT "user_id", "cache"
+                        FROM "plugins_cache_state"
+                        WHERE user_id = ?;
+                    """,
+                    (user_id,)
+            ) as cursor:
+                value = cursor.fecthone()
+                return json.loads(value or '{}')
+
+    @staticmethod
+    async def set_value_from_db(user_id: str, **kw):
+        old_value = StateMachine.get_value_from_db(user_id)
+        new_value = json.dumps({**kw, **old_value}, ensure_ascii=False)
+
+        async with aiosqlite.connect(StateMachine.db_name) as db:
+            await db.execute(
+                """
+                    IF EXISTS(SELECT * FROM plugins_cache_state WHERE user_id = ?)
+                       UPDATE plugins_cache_state 
+                       SET cache = ?
+                       WHERE id = ?
+                       
+                    ELSE
+                       INSERT INTO plugins_cache_state("user_id", "cache") 
+                       values(?, ?);
+                """,
+                [user_id, new_value, user_id, user_id, new_value]
+            )
+            await db.commit()
+
+    @staticmethod
+    async def clear_values_from_db(user_id: str):
+        async with aiosqlite.connect(StateMachine.db_name) as db:
+            await db.execute(
+                """
+                    DELETE FROM plugins_cache_state
+                    WHERE user_id = ?
+                """,
+                (user_id, )
+            )
+            await db.commit()
 
 
 def on_state(states: list):
@@ -72,6 +137,7 @@ def on_filter(filters: list):
                         return
 
             return await func(plugin, message_or_event)
+
         return wrapper
 
     return decorator
