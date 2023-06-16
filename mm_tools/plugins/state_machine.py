@@ -70,10 +70,8 @@ class StateMachine:
         async with aiosqlite.connect(StateMachine.db_name) as db:
             await db.execute(
                 """
-                   INSERT INTO plugins_cache_state("user_id", "cache") 
-                   values(?, ?)
-                   ON DUPLICATE KEY 
-                   UPDATE cache = ?;
+                   INSERT OR REPLACE INTO plugins_cache_state("user_id", "cache") 
+                   values(?, ?);
                 """,
                 [user_id, new_value,  new_value]
             )
