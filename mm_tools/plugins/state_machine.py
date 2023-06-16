@@ -53,7 +53,7 @@ class StateMachine:
         async with aiosqlite.connect(StateMachine.db_name) as db:
             async with db.execute(
                     """
-                        SELECT "user_id", "cache"
+                        SELECT "cache"
                         FROM "plugins_cache_state"
                         WHERE user_id = ?;
                     """,
