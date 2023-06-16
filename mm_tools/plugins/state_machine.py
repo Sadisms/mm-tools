@@ -73,7 +73,7 @@ class StateMachine:
                    INSERT OR REPLACE INTO plugins_cache_state("user_id", "cache") 
                    values(?, ?);
                 """,
-                [user_id, new_value,  new_value]
+                (user_id, new_value, )
             )
             await db.commit()
 
