@@ -59,7 +59,7 @@ class StateMachine:
                     """,
                     (user_id,)
             ) as cursor:
-                value = cursor.fecthone()
+                value = await cursor.fetchone()
                 return json.loads(value or '{}')
 
     @staticmethod
