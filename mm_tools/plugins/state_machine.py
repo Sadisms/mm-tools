@@ -89,6 +89,13 @@ class StateMachine:
             )
             await db.commit()
 
+    @staticmethod
+    async def clear_value_from_db(user_id: str, key_value: str):
+        old_value = await StateMachine.get_value_from_db(user_id)
+        old_value.pop(key_value)
+
+        await StateMachine.set_value_from_db(user_id, **old_value)
+
 
 def on_state(states: list):
     def decorator(func):
