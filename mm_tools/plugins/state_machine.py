@@ -59,8 +59,10 @@ class StateMachine:
                     """,
                     (user_id,)
             ) as cursor:
-                value = await cursor.fetchone()
-                return json.loads(value[0] or '{}')
+                if value := await cursor.fetchone():
+                    return json.loads(value[0] or '{}')
+
+                return {}
 
     @staticmethod
     async def set_value_from_db(user_id: str, **kw):
