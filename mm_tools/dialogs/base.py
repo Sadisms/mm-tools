@@ -10,6 +10,7 @@ class DialogElement:
         self.default = ''
         self.element_id = uuid4().hex
         self.help_text = ''
+        self.placeholder = ''
 
     def to_dict(self) -> dict:
         return {
@@ -22,7 +23,8 @@ class DialogElement:
             'optional': self.optional,
             'default': self.default,
             'name': self.element_id ,
-            'help_text': self.help_text
+            'help_text': self.help_text,
+            'placeholder': self.placeholder
         }
 
 
@@ -98,7 +100,9 @@ class InputTextElement(DialogElement):
             display_name: str,
             element_id: str,
             default: str = None,
-            optional: bool = False
+            optional: bool = False,
+            help_text: str = None,
+            placeholder: str = None
     ):
         super().__init__()
         self.type = 'text'
@@ -106,6 +110,8 @@ class InputTextElement(DialogElement):
         self.display_name = display_name
         self.element_id = element_id
         self.default = default
+        self.help_text = help_text
+        self.placeholder = placeholder
 
 
 class InputTextAreaElement(DialogElement):
@@ -115,7 +121,8 @@ class InputTextAreaElement(DialogElement):
             element_id: str,
             default: str = None,
             optional: bool = False,
-            help_text: str = None
+            help_text: str = None,
+            placeholder: str = None
     ):
         super().__init__()
         self.type = 'textarea'
@@ -124,6 +131,7 @@ class InputTextAreaElement(DialogElement):
         self.element_id = element_id
         self.default = default
         self.help_text = help_text
+        self.placeholder = placeholder
 
 class Dialog:
     def __init__(
