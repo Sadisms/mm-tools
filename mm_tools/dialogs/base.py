@@ -9,6 +9,7 @@ class DialogElement:
         self.optional = False
         self.default = ''
         self.element_id = uuid4().hex
+        self.help_text = ''
 
     def to_dict(self) -> dict:
         return {
@@ -20,7 +21,8 @@ class DialogElement:
             ] if self.options else None,
             'optional': self.optional,
             'default': self.default,
-            'name': self.element_id 
+            'name': self.element_id ,
+            'help_text': self.help_text
         }
 
 
@@ -105,6 +107,23 @@ class InputTextElement(DialogElement):
         self.element_id = element_id
         self.default = default
 
+
+class InputTextAreaElement(DialogElement):
+    def __init__(
+            self,
+            display_name: str,
+            element_id: str,
+            default: str = None,
+            optional: bool = False,
+            help_text: str = None
+    ):
+        super().__init__()
+        self.type = 'textarea'
+        self.optional = optional
+        self.display_name = display_name
+        self.element_id = element_id
+        self.default = default
+        self.help_text = help_text
 
 class Dialog:
     def __init__(
