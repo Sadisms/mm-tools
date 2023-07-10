@@ -108,13 +108,17 @@ class BasePlugin(Plugin):
 
     async def delete_message(
             self,
-            event: ActionEvent
+            event: ActionEvent = None,
+            post_id: str = None
     ) -> None:
+        if event:
+            post_id = event.post_id
+
         self.driver.posts.delete_post(
-            post_id=event.post_id
+            post_id=post_id
         )
 
-        await self.delete_cache_message(event.post_id)
+        await self.delete_cache_message(post_id)
 
     def get_file(
             self,
