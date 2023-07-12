@@ -3,7 +3,7 @@ import json
 from functools import lru_cache
 
 import aiosqlite
-from mattermostautodriver.exceptions import NotEnoughPermissions
+from mattermostautodriver.exceptions import NotEnoughPermissions, ResourceNotFound
 from mmpy_bot import Plugin, ActionEvent, Message
 from mmpy_bot.driver import Driver
 from mmpy_bot.wrappers import EventWrapper
@@ -270,6 +270,14 @@ class BasePlugin(Plugin):
                         props = json.loads(props)
                         _replace_url(props, new_url)
 
+                        # Check message
+                        try:
+                            driver.posts.get_post(post_id)
+
+                        except ResourceNotFound:
+                            await BasePlugin.delete_cache_message(post_id)
+                            continue
+
                         try:
                             driver.posts.update_post(
                                 post_id=post_id,
@@ -286,7 +294,7 @@ class BasePlugin(Plugin):
                                 integration_url=new_url
                             )
 
-                        except NotEnoughPermissions:
+                        except Exception:  # NOQA
                             pass
 
     @staticmethod
