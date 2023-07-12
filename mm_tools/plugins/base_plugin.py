@@ -266,7 +266,7 @@ class BasePlugin(Plugin):
                 async for row in cursor:
                     post_id, message, props, integration_url = row
 
-                    if integration_url != new_url:
+                    if new_url not in integration_url:
                         props = json.loads(props)
                         _replace_url(props, new_url)
 
