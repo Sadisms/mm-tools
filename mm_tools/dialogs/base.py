@@ -11,10 +11,12 @@ class DialogElement:
         self.element_id = uuid4().hex
         self.help_text = ''
         self.placeholder = ''
+        self.subtype = ''
 
     def to_dict(self) -> dict:
         return {
             'type': self.type,
+            'subtype': self.subtype,
             'display_name': self.display_name,
             'options': [
                 x.to_dict()
@@ -132,6 +134,28 @@ class InputTextAreaElement(DialogElement):
         self.default = default
         self.help_text = help_text
         self.placeholder = placeholder
+
+
+class InputEmailElement(DialogElement):
+    def __init__(
+            self,
+            display_name: str,
+            element_id: str,
+            default: str = None,
+            optional: bool = False,
+            help_text: str = None,
+            placeholder: str = None
+    ):
+        super().__init__()
+        self.type = 'text'
+        self.subtype = 'email'
+        self.optional = optional
+        self.display_name = display_name
+        self.element_id = element_id
+        self.default = default
+        self.help_text = help_text
+        self.placeholder = placeholder
+
 
 class Dialog:
     def __init__(
