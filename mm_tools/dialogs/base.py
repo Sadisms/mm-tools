@@ -157,6 +157,27 @@ class InputEmailElement(DialogElement):
         self.placeholder = placeholder
 
 
+class InputPhoneElement(DialogElement):
+    def __init__(
+            self,
+            display_name: str,
+            element_id: str,
+            default: str = None,
+            optional: bool = False,
+            help_text: str = None,
+            placeholder: str = None
+    ):
+        super().__init__()
+        self.type = 'text'
+        self.subtype = 'tel'
+        self.optional = optional
+        self.display_name = display_name
+        self.element_id = element_id
+        self.default = default
+        self.help_text = help_text
+        self.placeholder = placeholder
+
+
 class Dialog:
     def __init__(
             self,
