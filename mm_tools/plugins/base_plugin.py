@@ -194,8 +194,6 @@ class BasePlugin(Plugin):
 
     @staticmethod
     async def init_tables():
-        await BasePlugin.state.init_tables()
-
         async with aiosqlite.connect(BasePlugin.db_name) as db:
             await db.execute(
                 """
