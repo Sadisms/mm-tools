@@ -101,6 +101,32 @@ class Select:
         }
 
 
+class SelectUsers:
+    def __init__(
+            self,
+            action_id: str,
+            url: str,
+            text: str = '',
+            block_id: str = None
+    ):
+        self.text = text
+        self.action_id = action_id
+        self.url = url
+        self.block_id = block_id
+
+    def to_dict(self):
+        return {
+            "name": self.text,
+            "type": "select",
+            "data_source": "users",
+            "integration": {
+                "url": self.url + f'/{self.action_id}',
+                "context": {
+                    "block_id": self.block_id
+                }
+            },
+        }
+
 class Attachment:
     def __init__(
             self,
