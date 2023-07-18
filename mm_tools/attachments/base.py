@@ -1,7 +1,12 @@
 from typing import List, Union
 
 
-class Button:
+class ActionElement:
+    def to_dict(self):
+        raise NotImplementedError
+
+
+class Button(ActionElement):
     def __init__(
             self,
             text: str,
@@ -69,7 +74,7 @@ class SelectOption:
         }
 
 
-class Select:
+class Select(ActionElement):
     def __init__(
             self,
             action_id: str,
@@ -101,7 +106,7 @@ class Select:
         }
 
 
-class SelectUsers:
+class SelectUsers(ActionElement):
     def __init__(
             self,
             action_id: str,
@@ -131,7 +136,7 @@ class Attachment:
     def __init__(
             self,
             fields: List[Field] = None,
-            actions: List[Union[Button, Select]] = None,
+            actions: List[Union[ActionElement]] = None,
             text: str = None,
             title: str = None,
             title_link: str = None,
