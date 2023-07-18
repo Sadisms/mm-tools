@@ -81,7 +81,8 @@ class Select(ActionElement):
             url: str,
             options: list[SelectOption],
             text: str = '',
-            block_id: str = None
+            block_id: str = None,
+            default: SelectOption = None
     ):
         self.text = text
         self.action_id = action_id
@@ -89,10 +90,17 @@ class Select(ActionElement):
         self.url = url
         self.block_id = block_id
 
+        if default:
+            self.default = default.value
+
+        else:
+            self.default = None
+
     def to_dict(self):
         return {
             "name": self.text,
             "type": "select",
+            "default": self.default
             "integration": {
                 "url": self.url + f'/{self.action_id}',
                 "context": {
