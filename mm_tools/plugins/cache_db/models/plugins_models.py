@@ -1,19 +1,19 @@
-from peewee_aio import AIOModel, fields
+from peewee_aio import AIOModel, fields, Manager
 
-from .base_model import manager
+manager = Manager("aiosqlite:///.plugins.db")
 
 
 @manager.register
 class PluginsCacheProps(AIOModel):
     id = fields.AutoField()
     post_id = fields.CharField()
-    props = fields.TextField()
-    message = fields.TextField()
-    integration_url = fields.TextField()
+    props = fields.TextField(null=True)
+    message = fields.TextField(null=True)
+    integration_url = fields.TextField(null=True)
 
 
 @manager.register
 class PluginsCacheState(AIOModel):
     id = fields.AutoField()
     user_id = fields.CharField()
-    cache = fields.TextField()
+    cache = fields.TextField(default="{}")

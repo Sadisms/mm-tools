@@ -8,8 +8,7 @@ from mmpy_bot.driver import Driver
 from mmpy_bot.wrappers import EventWrapper
 
 from .state_machine import StateMachine
-from .cache_db.models.base_model import manager
-from .cache_db.models.plugins_models import PluginsCacheProps
+from .cache_db.models.plugins_models import PluginsCacheProps, manager
 
 
 def _find_url(d):
@@ -194,9 +193,8 @@ class BasePlugin(Plugin):
 
     @staticmethod
     async def init_tables():
-        async with manager:
-            async with manager.connection():
-                await PluginsCacheProps.create_table()
+        async with manager, manager.connection():
+            await PluginsCacheProps.create_table()
 
     @staticmethod
     async def static_create_post_with_cache_props(
@@ -244,41 +242,40 @@ class BasePlugin(Plugin):
             driver: Driver,
             new_url: str
     ):
-        async with manager:
-            async with manager.connection():
-                async for row in  PluginsCacheProps.select():
-                    post_id, message, props, integration_url = row
+        async with manager, manager.connection():
+            async for row in PluginsCacheProps.select():
+                post_id, message, props, integration_url = row
 
-                    if new_url not in integration_url:
-                        props = json.loads(props)
-                        _replace_url(props, new_url)
+                if new_url not in integration_url:
+                    props = json.loads(props)
+                    _replace_url(props, new_url)
 
-                        # Check message
-                        try:
-                            driver.posts.get_post(post_id)
+                    # Check message
+                    try:
+                        driver.posts.get_post(post_id)
 
-                        except ResourceNotFound:
-                            await BasePlugin.delete_cache_message(post_id)
-                            continue
+                    except ResourceNotFound:
+                        await BasePlugin.delete_cache_message(post_id)
+                        continue
 
-                        try:
-                            driver.posts.update_post(
-                                post_id=post_id,
-                                options={
-                                    'id': post_id,
-                                    'message': message,
-                                    'props': props
-                                }
-                            )
+                    try:
+                        driver.posts.update_post(
+                            post_id=post_id,
+                            options={
+                                'id': post_id,
+                                'message': message,
+                                'props': props
+                            }
+                        )
 
-                            await BasePlugin.update_cache_message(
-                                post_id=post_id,
-                                props=props,
-                                integration_url=new_url
-                            )
+                        await BasePlugin.update_cache_message(
+                            post_id=post_id,
+                            props=props,
+                            integration_url=new_url
+                        )
 
-                        except Exception:  # NOQA
-                            pass
+                    except Exception:  # NOQA
+                        pass
 
     @staticmethod
     async def add_cache_message(
@@ -286,33 +283,30 @@ class BasePlugin(Plugin):
             props: dict,
             message: str
     ):
-        async with manager:
-            async with manager.connection():
-                await PluginsCacheProps.create(
-                    post_id=post_id,
-                    props=json.dumps(props, ensure_ascii=False),
-                    integration_url=_find_url(props),
-                    message=message
-                )
+        async with manager, manager.connection():
+            await PluginsCacheProps.create(
+                post_id=post_id,
+                props=json.dumps(props, ensure_ascii=False),
+                integration_url=_find_url(props),
+                message=message
+            )
 
     @staticmethod
     async def get_cache_message(post_id: str):
-        async with manager:
-            async with manager.connection():
-                query = PluginsCacheProps.select().where(
-                    PluginsCacheProps.post_id == post_id
-                )
-                if await query.count() > 0:
-                    async for data in query:
-                        return data
+        async with manager, manager.connection():
+            query = PluginsCacheProps.select().where(
+                PluginsCacheProps.post_id == post_id
+            )
+            if await query.count() > 0:
+                async for data in query:
+                    return data
 
     @staticmethod
     async def delete_cache_message(post_id: str):
-        async with manager:
-            async with manager.connection():
-                await PluginsCacheProps.delete().where(
-                    PluginsCacheProps.post_id == post_id
-                )
+        async with manager, manager.connection():
+            await PluginsCacheProps.delete().where(
+                PluginsCacheProps.post_id == post_id
+            )
 
     @staticmethod
     async def update_cache_message(
@@ -346,15 +340,14 @@ class BasePlugin(Plugin):
             await BasePlugin.delete_cache_message(post_id)
 
     async def check_alive_message(self):
-        async with manager:
-            async with manager.connection():
-                async for row in PluginsCacheProps.select():
-                    post_id = row.post_id
+        async with manager, manager.connection():
+            async for row in PluginsCacheProps.select():
+                post_id = row.post_id
 
-                    try:
-                        self.driver.posts.get_post(
-                            post_id=post_id
-                        )
+                try:
+                    self.driver.posts.get_post(
+                        post_id=post_id
+                    )
 
-                    except NotEnoughPermissions:
-                        await self.delete_cache_message(post_id)
+                except NotEnoughPermissions:
+                    await self.delete_cache_message(post_id)
