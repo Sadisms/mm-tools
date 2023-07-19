@@ -11,9 +11,15 @@ class PluginsCacheProps(AIOModel):
     message = fields.TextField(null=True)
     integration_url = fields.TextField(null=True)
 
+    class Meta:
+        db_table = 'plugins_cache_props'
+
 
 @manager.register
 class PluginsCacheState(AIOModel):
     id = fields.AutoField()
     user_id = fields.CharField()
     cache = fields.TextField(default="{}")
+
+    class Meta:
+        db_table = 'plugins_cache_state'
