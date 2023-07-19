@@ -2,14 +2,14 @@ import io
 import json
 from functools import lru_cache
 
-import aiosqlite
 from mattermostautodriver.exceptions import NotEnoughPermissions, ResourceNotFound
 from mmpy_bot import Plugin, ActionEvent, Message
 from mmpy_bot.driver import Driver
 from mmpy_bot.wrappers import EventWrapper
 
-
 from .state_machine import StateMachine
+from .cache_db.models.base_model import manager
+from .cache_db.models.plugins_models import PluginsCacheProps
 
 
 def _find_url(d):
@@ -194,19 +194,9 @@ class BasePlugin(Plugin):
 
     @staticmethod
     async def init_tables():
-        async with aiosqlite.connect(BasePlugin.db_name) as db:
-            await db.execute(
-                """
-                    CREATE TABLE IF NOT EXISTS "plugins_cache_props" (
-                        "id" INTEGER NOT NULL PRIMARY KEY, 
-                        "post_id" VARCHAR(255) NOT NULL, 
-                        "props" TEXT NOT NULL,
-                        "message" TEXT,
-                        "integration_url" TEXT NOT NULL
-                    );
-                """
-            )
-            await db.commit()
+        async with manager:
+            async with manager.connection():
+                await PluginsCacheProps.create_table()
 
     @staticmethod
     async def static_create_post_with_cache_props(
@@ -254,14 +244,9 @@ class BasePlugin(Plugin):
             driver: Driver,
             new_url: str
     ):
-        async with aiosqlite.connect(BasePlugin.db_name) as db:
-            async with db.execute(
-                    """
-                        SELECT "post_id", "message", "props", "integration_url"
-                        FROM "plugins_cache_props";
-                    """
-            ) as cursor:
-                async for row in cursor:
+        async with manager:
+            async with manager.connection():
+                async for row in  PluginsCacheProps.select():
                     post_id, message, props, integration_url = row
 
                     if new_url not in integration_url:
@@ -301,44 +286,33 @@ class BasePlugin(Plugin):
             props: dict,
             message: str
     ):
-        async with aiosqlite.connect(BasePlugin.db_name) as db:
-            await db.execute(
-                """
-                    INSERT INTO plugins_cache_props ("post_id", "props", "integration_url", "message")
-                    VALUES (?, ?, ?, ?);
-                """,
-                (
-                    post_id,
-                    json.dumps(props, ensure_ascii=False),
-                    _find_url(props),
-                    message,
+        async with manager:
+            async with manager.connection():
+                await PluginsCacheProps.create(
+                    post_id=post_id,
+                    props=json.dumps(props, ensure_ascii=False),
+                    integration_url=_find_url(props),
+                    message=message
                 )
-            )
-            await db.commit()
 
     @staticmethod
     async def get_cache_message(post_id: str):
-        async with aiosqlite.connect(BasePlugin.db_name) as db:
-            async with db.execute(
-                    """
-                        SELECT *
-                        FROM "plugins_cache_props"
-                        WHERE "post_id" = ?;
-                    """,
-                    (post_id,)
-            ) as cursor:
-                return await cursor.fetchone()
+        async with manager:
+            async with manager.connection():
+                query = PluginsCacheProps.select().where(
+                    PluginsCacheProps.post_id == post_id
+                )
+                if await query.count() > 0:
+                    async for data in query:
+                        return data
 
     @staticmethod
     async def delete_cache_message(post_id: str):
-        async with aiosqlite.connect(BasePlugin.db_name) as db:
-            await db.execute(
-                """
-                    DELETE FROM "plugins_cache_props"
-                    WHERE "post_id" = ?
-                """, (post_id,)
-            )
-            await db.commit()
+        async with manager:
+            async with manager.connection():
+                await PluginsCacheProps.delete().where(
+                    PluginsCacheProps.post_id == post_id
+                )
 
     @staticmethod
     async def update_cache_message(
@@ -350,37 +324,32 @@ class BasePlugin(Plugin):
         if props:
             props = json.dumps(props, ensure_ascii=False)
 
-            async with aiosqlite.connect(BasePlugin.db_name) as db:
-                set_columns = ('props = ?, ' if props else '') + \
-                              ('message = ?, ' if message else '') + \
-                              ('integration_url = ?, ' if integration_url else '')
+            update_data = {}
+            if props:
+                update_data['props'] = props
 
-                await db.execute(
-                    f"""
-                        UPDATE "plugins_cache_props"
-                        SET {set_columns[:-2]}
-                        WHERE "post_id" = ?
-                    """,
-                    (
-                        *[x for x in [props, message, integration_url] if x],
-                        post_id,
+            if message:
+                update_data['message'] = message
+
+            if integration_url:
+                update_data['integration_url'] = integration_url
+
+            async with manager:
+                async with manager.connection():
+                    await PluginsCacheProps.update(
+                        **update_data
+                    ).where(
+                        PluginsCacheProps.post_id == post_id
                     )
-                )
-                await db.commit()
 
         else:
             await BasePlugin.delete_cache_message(post_id)
 
     async def check_alive_message(self):
-        async with aiosqlite.connect(BasePlugin.db_name) as db:
-            async with db.execute(
-                    """
-                        SELECT "post_id"
-                        FROM "plugins_cache_props";
-                    """
-            ) as cursor:
-                async for row in cursor:
-                    post_id = row[0]
+        async with manager:
+            async with manager.connection():
+                async for row in PluginsCacheProps.select():
+                    post_id = row.post_id
 
                     try:
                         self.driver.posts.get_post(
