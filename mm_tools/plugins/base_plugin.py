@@ -244,32 +244,30 @@ class BasePlugin(Plugin):
     ):
         async with manager, manager.connection():
             async for row in PluginsCacheProps.select():
-                post_id, message, props, integration_url = row
-
-                if new_url not in integration_url:
+                if new_url not in row.integration_url:
                     props = json.loads(props)
                     _replace_url(props, new_url)
 
                     # Check message
                     try:
-                        driver.posts.get_post(post_id)
+                        driver.posts.get_post(row.post_id)
 
                     except ResourceNotFound:
-                        await BasePlugin.delete_cache_message(post_id)
+                        await BasePlugin.delete_cache_message(row.post_id)
                         continue
 
                     try:
                         driver.posts.update_post(
-                            post_id=post_id,
+                            post_id=row.post_id,
                             options={
-                                'id': post_id,
-                                'message': message,
+                                'id': row.post_id,
+                                'message': row.message,
                                 'props': props
                             }
                         )
 
                         await BasePlugin.update_cache_message(
-                            post_id=post_id,
+                            post_id=row.post_id,
                             props=props,
                             integration_url=new_url
                         )
