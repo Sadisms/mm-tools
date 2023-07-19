@@ -86,7 +86,8 @@ class StaticSelectElement(DialogElement):
             display_name: str,
             element_id: str,
             options: list[ElementOption],
-            optional: bool = False
+            optional: bool = False,
+            default: ElementOption = None
     ):
         super().__init__()
         self.type = 'select'
@@ -94,6 +95,9 @@ class StaticSelectElement(DialogElement):
         self.optional = optional
         self.display_name = display_name
         self.element_id = element_id
+
+        if default:
+            self.default = default.value
 
 
 class InputTextElement(DialogElement):

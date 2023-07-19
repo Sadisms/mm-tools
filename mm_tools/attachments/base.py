@@ -100,7 +100,7 @@ class Select(ActionElement):
         return {
             "name": self.text,
             "type": "select",
-            "default": self.default
+            "default": self.default,
             "integration": {
                 "url": self.url + f'/{self.action_id}',
                 "context": {
