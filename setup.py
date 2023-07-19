@@ -8,7 +8,7 @@ if __name__ == '__main__':
         install_requires=[
             'aiosqlite',
             'peewee',
-            'peewee-aio',
-            'aiosqlite'
+            'peewee-async',
+            'aiopg'
         ]
     )

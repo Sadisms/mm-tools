@@ -2,12 +2,16 @@ import asyncio
 import json
 from functools import wraps
 
-from .cache_db.models.plugins_models import PluginsCacheState, manager
+from peewee_async import Manager
+
+from .cache_db.models.base_model import pooled_database
+from .cache_db.models.plugins_models import PluginsCacheState
 
 
 class StateMachine:
     state_data = {}
     db_name = '.plugins.db'
+    database_manager = Manager(pooled_database)
 
     def set_state(self, user_id: str, state: str | None) -> None:
         self.state_data[user_id] = {
@@ -36,40 +40,39 @@ class StateMachine:
             self.state_data[user_id].pop('cache')
 
     @staticmethod
-    async def init_tables():
-        async with manager, manager.connection():
-            return await PluginsCacheState.create_table()
+    def init_tables():
+        return PluginsCacheState.create_table()
 
     @staticmethod
     async def get_value_from_db(user_id: str) -> dict:
-        async with manager, manager.connection():
-            query = PluginsCacheState.select(
-                PluginsCacheState.cache
-            ).where(
-                PluginsCacheState.user_id == user_id
-            )
-            if await query.count() > 0:
-                async for data in query:
-                    return json.loads(data.cache)
+        query = PluginsCacheState.select(
+            PluginsCacheState.cache
+        ).where(
+            PluginsCacheState.user_id == user_id
+        )
+        if await StateMachine.database_manager.count(query) > 0:
+            for data in await StateMachine.database_manager.execute(query):
+                return data.cache
 
     @staticmethod
     async def set_value_from_db(user_id: str, **kw):
         old_value = await StateMachine.get_value_from_db(user_id)
-        new_value = json.dumps({**(old_value or {}), **kw}, ensure_ascii=False)
+        new_value = {**(old_value or {}), **kw}
 
-        async with manager, manager.connection():
-            cache, _ = await PluginsCacheState.get_or_create(
-                user_id=user_id
-            )
-            cache.cache = new_value
-            await cache.save()
+        cache, _ = await StateMachine.database_manager.get_or_create(
+            PluginsCacheState,
+            user_id=user_id
+        )
+        cache.cache = new_value
+        cache.save()
 
     @staticmethod
     async def clear_values_from_db(user_id: str):
-        async with manager, manager.connection():
-            await PluginsCacheState.delete().where(
+        await StateMachine.database_manager.delete(
+            PluginsCacheState.delete().where(
                 PluginsCacheState.user_id == user_id
             )
+        )
 
     @staticmethod
     async def clear_value_from_db(user_id: str, key_value: str):

@@ -1,25 +1,24 @@
-from peewee_aio import AIOModel, fields, Manager
+import peewee
+from playhouse.postgres_ext import JSONField
 
-manager = Manager("aiosqlite:///.plugins.db")
+from .base_model import BaseModel
 
 
-@manager.register
-class PluginsCacheProps(AIOModel):
-    id = fields.AutoField()
-    post_id = fields.CharField()
-    props = fields.TextField(null=True)
-    message = fields.TextField(null=True)
-    integration_url = fields.TextField(null=True)
+class PluginsCacheProps(BaseModel):
+    id = peewee.AutoField()
+    post_id = peewee.CharField()
+    props = JSONField(null=True)
+    message = peewee.TextField(null=True)
+    integration_url = peewee.TextField(null=True)
 
     class Meta:
         db_table = 'plugins_cache_props'
 
 
-@manager.register
-class PluginsCacheState(AIOModel):
-    id = fields.AutoField()
-    user_id = fields.CharField()
-    cache = fields.TextField(default="{}")
+class PluginsCacheState(BaseModel):
+    id = peewee.AutoField()
+    user_id = peewee.CharField()
+    cache = JSONField(default={})
 
     class Meta:
         db_table = 'plugins_cache_state'
