@@ -6,8 +6,8 @@ if __name__ == '__main__':
         name='mm-tools',
         packages=find_packages(),
         install_requires=[
-            'aiosqlite'
-            'peewee'
+            'aiosqlite',
+            'peewee',
             'peewee-aio'
         ]
     )
