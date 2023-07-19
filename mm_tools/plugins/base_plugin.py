@@ -245,7 +245,7 @@ class BasePlugin(Plugin):
         async with manager, manager.connection():
             async for row in PluginsCacheProps.select():
                 if new_url not in row.integration_url:
-                    props = json.loads(props)
+                    props = json.loads(row.props)
                     _replace_url(props, new_url)
 
                     # Check message
