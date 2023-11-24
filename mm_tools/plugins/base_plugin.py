@@ -160,7 +160,10 @@ class BasePlugin(Plugin):
     @lru_cache
     def get_user_full_name(self, user_id: str) -> str:
         user_info = self.get_user_info(user_id)
-        return f'{user_info["first_name"]} {user_info["last_name"]}'
+        if user_info['first_name'] and user_info['last_name']:
+            return f'{user_info["first_name"]} {user_info["last_name"]}'
+
+        return user_info['username'].title()
 
     @lru_cache
     def get_direct_from_user(self, user_id: str) -> str:
