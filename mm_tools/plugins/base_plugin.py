@@ -1,9 +1,9 @@
 import io
 from functools import lru_cache
 
+from mattermostautodriver import AsyncDriver
 from mattermostautodriver.exceptions import NotEnoughPermissions, ResourceNotFound
 from mmpy_bot import Plugin, ActionEvent, Message
-from mmpy_bot.driver import Driver
 from mmpy_bot.wrappers import EventWrapper
 from peewee_async import Manager
 
@@ -83,7 +83,7 @@ class BasePlugin(Plugin):
         if not props:
             props = {}
 
-        self.driver.posts.update_post(
+        await self.driver.posts.update_post(
             post_id=post_id,
             options={
                 'id': post_id,
@@ -114,19 +114,19 @@ class BasePlugin(Plugin):
         if event:
             post_id = event.post_id
 
-        self.driver.posts.delete_post(
+        await self.driver.posts.delete_post(
             post_id=post_id
         )
 
         await self.delete_cache_message(post_id)
 
-    def get_file(
+    async def get_file(
             self,
             file_id: str
     ) -> bytes:
-        return self.driver.files.get_file(file_id).content
+        return await self.driver.files.get_file(file_id).content
 
-    def upload_file(
+    async def upload_file(
             self,
             channel_id: str,
             files: list[tuple[str, io.BytesIO]],
@@ -134,7 +134,7 @@ class BasePlugin(Plugin):
         files_ids = []
         for file in files:
             files_ids.append(
-                self.driver.files.upload_file(
+                await self.driver.files.upload_file(
                     data={'channel_id': channel_id},
                     files={
                         'files': file
@@ -142,7 +142,7 @@ class BasePlugin(Plugin):
                 )['file_infos'][0]['id']
             )
 
-        self.driver.posts.create_post(
+        await self.driver.posts.create_post(
             options={
                 'channel_id': channel_id,
                 'file_ids': files_ids
@@ -150,24 +150,24 @@ class BasePlugin(Plugin):
         )
 
     @lru_cache
-    def get_user_info(self, user_id: str) -> dict:
-        return self.driver.users.get_user(user_id=user_id)
+    async def get_user_info(self, user_id: str) -> dict:
+        return await self.driver.users.get_user(user_id=user_id)
 
     @lru_cache
-    def get_user_name(self, user_id: str):
-        return self.get_user_info(user_id)['username']
+    async def get_user_name(self, user_id: str):
+        return await self.get_user_info(user_id)['username']
 
     @lru_cache
-    def get_user_full_name(self, user_id: str) -> str:
-        user_info = self.get_user_info(user_id)
+    async def get_user_full_name(self, user_id: str) -> str:
+        user_info = await self.get_user_info(user_id)
         if user_info['first_name'] and user_info['last_name']:
             return f'{user_info["first_name"]} {user_info["last_name"]}'
 
         return user_info['username'].title()
 
     @lru_cache
-    def get_direct_from_user(self, user_id: str) -> str:
-        return self.driver.channels.create_direct_channel([self.driver.user_id, user_id])["id"]
+    async def get_direct_from_user(self, user_id: str) -> str:
+        return (await self.driver.channels.create_direct_channel([self.driver.user_id, user_id]))["id"]
 
     def message_to_action_event(self, message: Message, context: dict = None, post_id: str = None):
         action_event = ActionEvent(
@@ -184,14 +184,14 @@ class BasePlugin(Plugin):
         )
         return action_event
 
-    def send_files_from_message(self, message: Message, channel_id: str) -> list[str]:
+    async def send_files_from_message(self, message: Message, channel_id: str) -> list[str]:
         return [
-            self.driver.files.upload_file(
+            await (self.driver.files.upload_file(
                 data={'channel_id': channel_id},
                 files={
-                    'files': (file['name'], self.driver.files.get_file(file['id']).content)
+                    'files': (file['name'], await self.driver.files.get_file(file['id']).content)
                 }
-            )['file_infos'][0]['id']
+            ))['file_infos'][0]['id']
             for file in message.body['data']['post']['metadata']['files']
         ]
 
@@ -201,16 +201,16 @@ class BasePlugin(Plugin):
 
     @staticmethod
     async def static_create_post_with_cache_props(
-            driver: Driver,
+            driver: AsyncDriver,
             channel_id: str = None,
             receiver_id: str = None,
             message: str = '',
             props: dict = None
     ):
         if not channel_id and receiver_id:
-            channel_id = driver.channels.create_direct_channel([driver.user_id, receiver_id])["id"]
+            channel_id = (await driver.channels.create_direct_channel([driver.user_id, receiver_id]))["id"]
 
-        post = driver.create_post(
+        post = await driver.create_post(
             channel_id=channel_id,
             message=message,
             props=props
@@ -242,7 +242,7 @@ class BasePlugin(Plugin):
 
     @staticmethod
     async def update_integrations(
-            driver: Driver,
+            driver: AsyncDriver,
             new_url: str
     ):
         for row in await BasePlugin.database_manager.execute(PluginsCacheProps.select()):
@@ -251,14 +251,14 @@ class BasePlugin(Plugin):
 
                 # Check message
                 try:
-                    driver.posts.get_post(row.post_id)
+                    await driver.posts.get_post(row.post_id)
 
                 except ResourceNotFound:
                     await BasePlugin.delete_cache_message(row.post_id)
                     continue
 
                 try:
-                    driver.posts.update_post(
+                    await driver.posts.update_post(
                         post_id=row.post_id,
                         options={
                             'id': row.post_id,
@@ -341,7 +341,7 @@ class BasePlugin(Plugin):
             post_id = row.post_id
 
             try:
-                self.driver.posts.get_post(
+                await self.driver.posts.get_post(
                     post_id=post_id
                 )
 
