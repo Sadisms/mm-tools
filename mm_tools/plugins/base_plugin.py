@@ -1,5 +1,4 @@
 import io
-from functools import lru_cache
 
 from mattermostautodriver import AsyncDriver
 from mattermostautodriver.exceptions import NotEnoughPermissions, ResourceNotFound
@@ -149,15 +148,12 @@ class BasePlugin(Plugin):
             }
         )
 
-    @lru_cache
     async def get_user_info(self, user_id: str) -> dict:
         return await self.driver.users.get_user(user_id=user_id)
 
-    @lru_cache
     async def get_user_name(self, user_id: str):
         return (await self.get_user_info(user_id))['username']
 
-    @lru_cache
     async def get_user_full_name(self, user_id: str) -> str:
         user_info = await self.get_user_info(user_id)
         if user_info['first_name'] and user_info['last_name']:
@@ -165,7 +161,7 @@ class BasePlugin(Plugin):
 
         return user_info['username'].title()
 
-    @lru_cache
+
     async def get_direct_from_user(self, user_id: str) -> str:
         return (await self.driver.channels.create_direct_channel([self.driver.user_id, user_id]))["id"]
 
