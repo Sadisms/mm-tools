@@ -155,7 +155,7 @@ class BasePlugin(Plugin):
 
     @lru_cache
     async def get_user_name(self, user_id: str):
-        return await self.get_user_info(user_id)['username']
+        return (await self.get_user_info(user_id))['username']
 
     @lru_cache
     async def get_user_full_name(self, user_id: str) -> str:
