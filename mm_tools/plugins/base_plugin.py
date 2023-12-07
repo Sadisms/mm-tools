@@ -1,4 +1,5 @@
 import io
+from functools import wraps
 
 from mattermostautodriver import AsyncDriver
 from mattermostautodriver.exceptions import NotEnoughPermissions, ResourceNotFound
@@ -9,6 +10,23 @@ from peewee_async import Manager
 from .cache_db.models.base_model import pooled_database
 from .state_machine import StateMachine
 from .cache_db.models.plugins_models import PluginsCacheProps
+
+
+def async_lru(func):
+    cache = {}
+
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        key = (args, frozenset(kwargs.items()), func.__name__)
+        if key in cache:
+            return cache[key]
+
+        result = await func(*args, **kwargs)
+        cache[key] = result
+
+        return result
+
+    return wrapper
 
 
 def _find_url(d):
@@ -148,12 +166,15 @@ class BasePlugin(Plugin):
             }
         )
 
+    @async_lru
     async def get_user_info(self, user_id: str) -> dict:
         return await self.driver.users.get_user(user_id=user_id)
 
+    @async_lru
     async def get_user_name(self, user_id: str):
         return (await self.get_user_info(user_id))['username']
 
+    @async_lru
     async def get_user_full_name(self, user_id: str) -> str:
         user_info = await self.get_user_info(user_id)
         if user_info['first_name'] and user_info['last_name']:
@@ -161,7 +182,7 @@ class BasePlugin(Plugin):
 
         return user_info['username'].title()
 
-
+    @async_lru
     async def get_direct_from_user(self, user_id: str) -> str:
         return (await self.driver.channels.create_direct_channel([self.driver.user_id, user_id]))["id"]
 
