@@ -12,6 +12,7 @@ class DialogElement:
         self.help_text = ''
         self.placeholder = ''
         self.subtype = ''
+        self.data_source = ''
 
     def to_dict(self) -> dict:
         return {
@@ -24,9 +25,10 @@ class DialogElement:
             ] if self.options else None,
             'optional': self.optional,
             'default': self.default,
-            'name': self.element_id ,
+            'name': self.element_id,
             'help_text': self.help_text,
-            'placeholder': self.placeholder
+            'placeholder': self.placeholder,
+            'data_source': self.data_source
         }
 
 
@@ -95,6 +97,44 @@ class StaticSelectElement(DialogElement):
         self.optional = optional
         self.display_name = display_name
         self.element_id = element_id
+
+        if default:
+            self.default = default.value
+
+
+class SelectChannel(DialogElement):
+    def __init__(
+            self,
+            display_name: str,
+            element_id: str,
+            optional: bool = False,
+            default: ElementOption = None
+    ):
+        super().__init__()
+        self.type = 'select'
+        self.optional = optional
+        self.display_name = display_name
+        self.element_id = element_id
+        self.data_source = 'channels'
+
+        if default:
+            self.default = default.value
+
+
+class SelectUsers(DialogElement):
+    def __init__(
+            self,
+            display_name: str,
+            element_id: str,
+            optional: bool = False,
+            default: ElementOption = None
+    ):
+        super().__init__()
+        self.type = 'select'
+        self.optional = optional
+        self.display_name = display_name
+        self.element_id = element_id
+        self.data_source = 'users'
 
         if default:
             self.default = default.value
