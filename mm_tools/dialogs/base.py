@@ -102,7 +102,7 @@ class StaticSelectElement(DialogElement):
             self.default = default.value
 
 
-class SelectChannel(DialogElement):
+class SelectChannelElement(DialogElement):
     def __init__(
             self,
             display_name: str,
@@ -121,7 +121,7 @@ class SelectChannel(DialogElement):
             self.default = default.value
 
 
-class SelectUsers(DialogElement):
+class SelectUserElement(DialogElement):
     def __init__(
             self,
             display_name: str,
