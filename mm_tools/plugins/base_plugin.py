@@ -280,6 +280,7 @@ class BasePlugin(Plugin):
             new_url: str
     ):
         async_driver = AsyncDriver(driver.client._options)
+        await async_driver.login()
 
         rows = await BasePlugin.database_manager.execute(PluginsCacheProps.select())
 
