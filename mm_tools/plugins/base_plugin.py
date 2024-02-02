@@ -1,7 +1,6 @@
 import io
 from functools import lru_cache
 
-from mattermostautodriver import AsyncDriver
 from mattermostautodriver.exceptions import NotEnoughPermissions, ResourceNotFound
 from mmpy_bot import Plugin, ActionEvent, Message
 from mmpy_bot.driver import Driver
@@ -246,23 +245,20 @@ class BasePlugin(Plugin):
             driver: Driver,
             new_url: str
     ):
-        async_driver = AsyncDriver(driver.client._options)
-        await async_driver.login()
-
         for row in await BasePlugin.database_manager.execute(PluginsCacheProps.select()):
             if new_url not in row.integration_url:
                 _replace_url(row.props, new_url)
 
                 # Check message
                 try:
-                    await async_driver.posts.get_post(row.post_id)
+                    driver.posts.get_post(row.post_id)
 
                 except ResourceNotFound:
                     await BasePlugin.delete_cache_message(row.post_id)
                     continue
 
                 try:
-                    await async_driver.posts.update_post(
+                    driver.posts.update_post(
                         post_id=row.post_id,
                         options={
                             'id': row.post_id,
