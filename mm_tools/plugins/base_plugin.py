@@ -1,6 +1,8 @@
+import asyncio
 import io
 from functools import lru_cache
 
+from mattermostautodriver import AsyncDriver
 from mattermostautodriver.exceptions import NotEnoughPermissions, ResourceNotFound
 from mmpy_bot import Plugin, ActionEvent, Message
 from mmpy_bot.driver import Driver
@@ -241,40 +243,50 @@ class BasePlugin(Plugin):
         )
 
     @staticmethod
+    async def _gather_update_post(new_url, row, async_driver):
+        if new_url not in row.integration_url:
+            _replace_url(row.props, new_url)
+
+            # Check message
+            try:
+                await async_driver.posts.get_post(row.post_id)
+
+            except ResourceNotFound:
+                await BasePlugin.delete_cache_message(row.post_id)
+                return
+
+            try:
+                await async_driver.posts.update_post(
+                    post_id=row.post_id,
+                    options={
+                        'id': row.post_id,
+                        'message': row.message,
+                        'props': row.props
+                    }
+                )
+
+                await BasePlugin.update_cache_message(
+                    post_id=row.post_id,
+                    props=row.props,
+                    integration_url=new_url
+                )
+
+            except Exception:  # NOQA
+                pass
+
+    @staticmethod
     async def update_integrations(
             driver: Driver,
             new_url: str
     ):
-        for row in await BasePlugin.database_manager.execute(PluginsCacheProps.select()):
-            if new_url not in row.integration_url:
-                _replace_url(row.props, new_url)
+        async_driver = AsyncDriver(driver.client._options)
 
-                # Check message
-                try:
-                    driver.posts.get_post(row.post_id)
+        rows = await BasePlugin.database_manager.execute(PluginsCacheProps.select())
 
-                except ResourceNotFound:
-                    await BasePlugin.delete_cache_message(row.post_id)
-                    continue
-
-                try:
-                    driver.posts.update_post(
-                        post_id=row.post_id,
-                        options={
-                            'id': row.post_id,
-                            'message': row.message,
-                            'props': row.props
-                        }
-                    )
-
-                    await BasePlugin.update_cache_message(
-                        post_id=row.post_id,
-                        props=row.props,
-                        integration_url=new_url
-                    )
-
-                except Exception:  # NOQA
-                    pass
+        await asyncio.gather(*[
+            BasePlugin._gather_update_post(new_url, row, async_driver)
+            for row in rows
+        ])
 
     @staticmethod
     async def add_cache_message(
