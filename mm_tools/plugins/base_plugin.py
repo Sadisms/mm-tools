@@ -8,6 +8,7 @@ from mmpy_bot.wrappers import EventWrapper
 from peewee_async import Manager
 
 from .cache_db.models.base_model import pooled_database
+from .cache_db.models.migrator import manager
 from .state_machine import StateMachine
 from .cache_db.models.plugins_models import PluginsCacheProps
 
@@ -197,6 +198,8 @@ class BasePlugin(Plugin):
 
     @staticmethod
     def init_tables():
+        manager.upgrade()
+
         PluginsCacheProps.create_table()
 
     @staticmethod
@@ -218,6 +221,7 @@ class BasePlugin(Plugin):
 
         if props and _find_url(props):
             await BasePlugin.add_cache_message(
+                bot_user_id=driver.client.userid,
                 post_id=post['id'],
                 props=props,
                 message=message
@@ -245,7 +249,9 @@ class BasePlugin(Plugin):
             driver: Driver,
             new_url: str
     ):
-        for row in await BasePlugin.database_manager.execute(PluginsCacheProps.select()):
+        for row in await BasePlugin.database_manager.execute(PluginsCacheProps.select().where(
+            PluginsCacheProps.bot_user_id == driver.client.userid
+        )):
             if new_url not in row.integration_url:
                 _replace_url(row.props, new_url)
 
@@ -278,12 +284,14 @@ class BasePlugin(Plugin):
 
     @staticmethod
     async def add_cache_message(
+            bot_user_id: str,
             post_id: str,
             props: dict,
             message: str
     ):
         await BasePlugin.database_manager.create(
             PluginsCacheProps,
+            bot_user_id=bot_user_id,
             post_id=post_id,
             props=props,
             integration_url=_find_url(props),
@@ -337,7 +345,9 @@ class BasePlugin(Plugin):
             await BasePlugin.delete_cache_message(post_id)
 
     async def check_alive_message(self):
-        for row in await BasePlugin.database_manager.execute(PluginsCacheProps.select()):
+        for row in await BasePlugin.database_manager.execute(PluginsCacheProps.select().where(
+            PluginsCacheProps.bot_user_id == self.driver.client.userid
+        )):
             post_id = row.post_id
 
             try:

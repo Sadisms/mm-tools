@@ -9,6 +9,7 @@ if __name__ == '__main__':
             'aiosqlite',
             'peewee',
             'peewee-async',
-            'aiopg'
+            'aiopg',
+            'peewee-moves',
         ]
     )

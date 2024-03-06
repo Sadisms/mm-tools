@@ -6,6 +6,7 @@ from .base_model import BaseModel
 
 class PluginsCacheProps(BaseModel):
     id = peewee.AutoField()
+    bot_user_id = peewee.CharField()
     post_id = peewee.CharField()
     props = JSONField(null=True)
     message = peewee.TextField(null=True)
