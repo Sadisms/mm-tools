@@ -204,6 +204,8 @@ class BasePlugin(Plugin):
             directory='plugins/cache_db/models/migrations'
         )
 
+        manager.upgrade()
+
         PluginsCacheProps.create_table()
 
     @staticmethod
