@@ -6,9 +6,9 @@ from mmpy_bot import Plugin, ActionEvent, Message
 from mmpy_bot.driver import Driver
 from mmpy_bot.wrappers import EventWrapper
 from peewee_async import Manager
+from peewee_moves import DatabaseManager
 
 from .cache_db.models.base_model import pooled_database
-from .cache_db.models.migrator import manager
 from .state_machine import StateMachine
 from .cache_db.models.plugins_models import PluginsCacheProps
 
@@ -198,7 +198,11 @@ class BasePlugin(Plugin):
 
     @staticmethod
     def init_tables():
-        manager.upgrade()
+        manager = DatabaseManager(
+            database=pooled_database,
+            table_name='plugins_migrations',
+            directory='plugins/cache_db/models/migrations'
+        )
 
         PluginsCacheProps.create_table()
 
