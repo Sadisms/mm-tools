@@ -1,5 +1,6 @@
 import inspect
 import io
+import logging
 from functools import lru_cache
 
 from mattermostautodriver.exceptions import NotEnoughPermissions, ResourceNotFound
@@ -200,6 +201,8 @@ class BasePlugin(Plugin):
     @staticmethod
     def init_tables():
         current_path = inspect.getfile(inspect.currentframe()).replace('base_plugin.py', '')
+
+        logging.info(f'{current_path}cache_db/models/migrations')
 
         manager = DatabaseManager(
             database=pooled_database,
