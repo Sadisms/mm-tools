@@ -1,3 +1,4 @@
+import inspect
 import io
 from functools import lru_cache
 
@@ -198,10 +199,12 @@ class BasePlugin(Plugin):
 
     @staticmethod
     def init_tables():
+        current_path = inspect.getfile(inspect.currentframe()).replace('base_plugin.py', '')
+
         manager = DatabaseManager(
             database=pooled_database,
             table_name='plugins_migrations',
-            directory='plugins/cache_db/models/migrations'
+            directory=f'{current_path}cache_db/models/migrations'
         )
 
         manager.upgrade()
