@@ -62,6 +62,9 @@ class BasePlugin(Plugin):
         self.logger = logger
         super().__init__()
 
+    async def logging_event(self, event: EventWrapper) -> None:
+        self.logger.info(event.body)
+
     async def call_function(
             self,
             function,
@@ -71,7 +74,7 @@ class BasePlugin(Plugin):
         """ Логирование """
 
         if event.body != BasePlugin.last_log:
-            self.logger.info(event.body)
+            await self.logging_event(event)
             BasePlugin.last_log = event.body
 
         await super().call_function(function, event, groups)
