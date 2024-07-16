@@ -1,3 +1,4 @@
+import importlib
 import inspect
 import io
 import logging
@@ -58,8 +59,17 @@ class BasePlugin(Plugin):
     last_log = None
     database_manager = Manager(pooled_database)
 
-    def __init__(self, logger):
+    def __init__(self, logger, sentry_profile: bool = False):
         self.logger = logger
+
+        self.sentry_module = None
+        if sentry_profile:
+            try:
+                self.sentry_module = importlib.import_module("sentry_sdk")
+
+            except ImportError:
+                raise ImportError("Install sentry_sdk! pip install sentry-sdk")
+
         super().__init__()
 
     async def logging_event(self, event: EventWrapper) -> None:
@@ -77,7 +87,12 @@ class BasePlugin(Plugin):
             await self.logging_event(event)
             BasePlugin.last_log = event.body
 
-        await super().call_function(function, event, groups)
+        if self.sentry_module:
+            with self.sentry_module.start_transaction(name=function.__name__):
+                await super().call_function(function, event, groups)
+
+        else:
+            await super().call_function(function, event, groups)
 
     async def update_message(
             self,
