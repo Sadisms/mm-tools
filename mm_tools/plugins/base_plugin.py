@@ -88,7 +88,7 @@ class BasePlugin(Plugin):
             BasePlugin.last_log = event.body
 
         if self.sentry_module:
-            with self.sentry_module.start_transaction(name=function.__name__):
+            with self.sentry_module.start_transaction(name=function.__name__()):
                 await super().call_function(function, event, groups)
 
         else:
