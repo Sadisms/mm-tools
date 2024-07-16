@@ -7,6 +7,7 @@ from functools import lru_cache
 from mattermostautodriver.exceptions import NotEnoughPermissions, ResourceNotFound
 from mmpy_bot import Plugin, ActionEvent, Message
 from mmpy_bot.driver import Driver
+from mmpy_bot.function import Function
 from mmpy_bot.wrappers import EventWrapper
 from peewee_async import Manager
 from peewee_moves import DatabaseManager
@@ -77,7 +78,7 @@ class BasePlugin(Plugin):
 
     async def call_function(
             self,
-            function,
+            function: Function,
             event: EventWrapper,
             groups=[],
     ):
@@ -88,7 +89,7 @@ class BasePlugin(Plugin):
             BasePlugin.last_log = event.body
 
         if self.sentry_module:
-            with self.sentry_module.start_transaction(name=function.__name__()):
+            with self.sentry_module.start_transaction(name=function.name):
                 await super().call_function(function, event, groups)
 
         else:
