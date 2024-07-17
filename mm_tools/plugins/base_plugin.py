@@ -60,9 +60,15 @@ class BasePlugin(Plugin):
     last_log = None
     database_manager = Manager(pooled_database)
 
-    def __init__(self, logger, sentry_profile: bool = False):
+    def __init__(
+            self,
+            logger,
+            sentry_profile: bool = False,
+            sentry_profile_prefix: str = None
+    ):
         self.logger = logger
 
+        self.sentry_profile_prefix = sentry_profile_prefix
         self.sentry_module = None
         if sentry_profile:
             try:
@@ -89,7 +95,11 @@ class BasePlugin(Plugin):
             BasePlugin.last_log = event.body
 
         if self.sentry_module:
-            with self.sentry_module.start_transaction(name=function.name):
+            profile_name = function.name
+            if isinstance(self.sentry_profile_prefix, str):
+                profile_name = self.sentry_profile_prefix + profile_name
+
+            with self.sentry_module.start_transaction(name=profile_name):
                 await super().call_function(function, event, groups)
 
         else:
