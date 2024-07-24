@@ -1,6 +1,7 @@
 import importlib
 import io
 from functools import lru_cache
+from typing import Union
 
 from mmpy_bot import Plugin, ActionEvent, Message
 from mmpy_bot.function import Function
@@ -166,3 +167,6 @@ class BasePlugin(Plugin):
             )['file_infos'][0]['id']
             for file in message.body['data']['post']['metadata']['files']
         ]
+
+    def delete_post(self, event_or_message: Union[ActionEvent, Message]) -> None:
+        self.driver.posts.delete_post(event_or_message.post_id)
