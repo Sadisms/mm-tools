@@ -1,7 +1,7 @@
 import importlib
 import io
 from functools import lru_cache
-from typing import Union, Dict, Optional
+from typing import Dict, Optional
 
 from mmpy_bot import Plugin, ActionEvent, Message
 from mmpy_bot.function import Function
@@ -62,7 +62,7 @@ class BasePlugin(Plugin):
         else:
             await super().call_function(function, event, groups)
 
-    async def update_message(
+    def update_message(
             self,
             post_id: str,
             message: str,
