@@ -81,7 +81,7 @@ class BasePlugin(Plugin):
             }
         )
 
-    async def delete_message(
+    def delete_message(
             self,
             event: ActionEvent = None,
             post_id: str = None
@@ -167,6 +167,3 @@ class BasePlugin(Plugin):
             )['file_infos'][0]['id']
             for file in message.body['data']['post']['metadata']['files']
         ]
-
-    def delete_post(self, event_or_message: Union[ActionEvent, Message]) -> None:
-        self.driver.posts.delete_post(event_or_message.post_id)
