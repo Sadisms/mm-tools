@@ -1,7 +1,7 @@
 import importlib
 import io
 from functools import lru_cache
-from typing import Union
+from typing import Union, Dict, Optional
 
 from mmpy_bot import Plugin, ActionEvent, Message
 from mmpy_bot.function import Function
@@ -141,6 +141,30 @@ class BasePlugin(Plugin):
     @lru_cache
     def get_direct_from_user(self, user_id: str) -> str:
         return self.driver.channels.create_direct_channel([self.driver.user_id, user_id])["id"]
+
+    def direct_post(
+            self,
+            receiver_id: str,
+            message: str = "",
+            file_paths: Optional[str] = None,
+            root_id: str = "",
+            props=None,
+            ephemeral_user_id: Optional[str] = None,
+    ) -> Dict:
+
+        if props is None:
+            props = {}
+
+        direct_id = self.get_direct_from_user(receiver_id)
+
+        return self.driver.create_post(
+            channel_id=direct_id,
+            message=message,
+            props=props,
+            root_id=root_id,
+            file_paths=file_paths,
+            ephemeral_user_id=ephemeral_user_id
+        )
 
     def message_to_action_event(self, message: Message, context: dict = None, post_id: str = None):
         action_event = ActionEvent(
