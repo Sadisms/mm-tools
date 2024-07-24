@@ -1,3 +1,4 @@
+import importlib
 import inspect
 import io
 import logging
@@ -6,6 +7,7 @@ from functools import lru_cache
 from mattermostautodriver.exceptions import NotEnoughPermissions, ResourceNotFound
 from mmpy_bot import Plugin, ActionEvent, Message
 from mmpy_bot.driver import Driver
+from mmpy_bot.function import Function
 from mmpy_bot.wrappers import EventWrapper
 from peewee_async import Manager
 from peewee_moves import DatabaseManager
@@ -58,8 +60,23 @@ class BasePlugin(Plugin):
     last_log = None
     database_manager = Manager(pooled_database)
 
-    def __init__(self, logger):
+    def __init__(
+            self,
+            logger,
+            sentry_profile: bool = False,
+            sentry_profile_prefix: str = None
+    ):
         self.logger = logger
+
+        self.sentry_profile_prefix = sentry_profile_prefix
+        self.sentry_module = None
+        if sentry_profile:
+            try:
+                self.sentry_module = importlib.import_module("sentry_sdk")
+
+            except ImportError:
+                raise ImportError("Install sentry_sdk! pip install sentry-sdk")
+
         super().__init__()
 
     async def logging_event(self, event: EventWrapper) -> None:
@@ -67,7 +84,7 @@ class BasePlugin(Plugin):
 
     async def call_function(
             self,
-            function,
+            function: Function,
             event: EventWrapper,
             groups=[],
     ):
@@ -77,7 +94,16 @@ class BasePlugin(Plugin):
             await self.logging_event(event)
             BasePlugin.last_log = event.body
 
-        await super().call_function(function, event, groups)
+        if self.sentry_module:
+            profile_name = function.name
+            if isinstance(self.sentry_profile_prefix, str):
+                profile_name = self.sentry_profile_prefix + profile_name
+
+            with self.sentry_module.start_transaction(name=profile_name):
+                await super().call_function(function, event, groups)
+
+        else:
+            await super().call_function(function, event, groups)
 
     async def update_message(
             self,
