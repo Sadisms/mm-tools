@@ -62,7 +62,7 @@ class BasePlugin(Plugin):
         else:
             await super().call_function(function, event, groups)
 
-    def update_message(
+    async def update_message(
             self,
             post_id: str,
             message: str,
@@ -72,7 +72,7 @@ class BasePlugin(Plugin):
         if not props:
             props = {}
 
-        self.driver.posts.update_post(
+        await self.driver.posts.update_post(
             post_id=post_id,
             options={
                 'id': post_id,
@@ -81,7 +81,7 @@ class BasePlugin(Plugin):
             }
         )
 
-    def delete_message(
+    async def delete_message(
             self,
             event: ActionEvent = None,
             post_id: str = None
@@ -89,17 +89,17 @@ class BasePlugin(Plugin):
         if event:
             post_id = event.post_id
 
-        self.driver.posts.delete_post(
+        await self.driver.posts.delete_post(
             post_id=post_id
         )
 
-    def get_file(
+    async def get_file(
             self,
             file_id: str
     ) -> bytes:
-        return self.driver.files.get_file(file_id).content
+        return await self.driver.files.get_file(file_id).content
 
-    def upload_file(
+    async def upload_file(
             self,
             channel_id: str,
             files: list[tuple[str, io.BytesIO]],
@@ -107,7 +107,7 @@ class BasePlugin(Plugin):
         files_ids = []
         for file in files:
             files_ids.append(
-                self.driver.files.upload_file(
+                await self.driver.files.upload_file(
                     data={'channel_id': channel_id},
                     files={
                         'files': file
@@ -115,34 +115,30 @@ class BasePlugin(Plugin):
                 )['file_infos'][0]['id']
             )
 
-        self.driver.posts.create_post(
+        await self.driver.posts.create_post(
             options={
                 'channel_id': channel_id,
                 'file_ids': files_ids
             }
         )
 
-    @lru_cache
-    def get_user_info(self, user_id: str) -> dict:
-        return self.driver.users.get_user(user_id=user_id)
+    async def get_user_info(self, user_id: str) -> dict:
+        return await self.driver.users.get_user(user_id=user_id)
 
-    @lru_cache
-    def get_user_name(self, user_id: str):
-        return self.get_user_info(user_id)['username']
+    async def get_user_name(self, user_id: str):
+        return await self.get_user_info(user_id)['username']
 
-    @lru_cache
-    def get_user_full_name(self, user_id: str) -> str:
-        user_info = self.get_user_info(user_id)
+    async def get_user_full_name(self, user_id: str) -> str:
+        user_info = await self.get_user_info(user_id)
         if user_info['first_name'] and user_info['last_name']:
             return f'{user_info["first_name"]} {user_info["last_name"]}'
 
         return user_info['username'].title()
 
-    @lru_cache
-    def get_direct_from_user(self, user_id: str) -> str:
-        return self.driver.channels.create_direct_channel([self.driver.user_id, user_id])["id"]
+    async def get_direct_from_user(self, user_id: str) -> str:
+        return await self.driver.channels.create_direct_channel([self.driver.user_id, user_id])["id"]
 
-    def direct_post(
+    async def direct_post(
             self,
             receiver_id: str,
             message: str = "",
@@ -155,9 +151,9 @@ class BasePlugin(Plugin):
         if props is None:
             props = {}
 
-        direct_id = self.get_direct_from_user(receiver_id)
+        direct_id = await self.get_direct_from_user(receiver_id)
 
-        return self.driver.create_post(
+        return await self.driver.create_post(
             channel_id=direct_id,
             message=message,
             props=props,
@@ -181,12 +177,12 @@ class BasePlugin(Plugin):
         )
         return action_event
 
-    def send_files_from_message(self, message: Message, channel_id: str) -> list[str]:
+    async def send_files_from_message(self, message: Message, channel_id: str) -> list[str]:
         return [
-            self.driver.files.upload_file(
+            await self.driver.files.upload_file(
                 data={'channel_id': channel_id},
                 files={
-                    'files': (file['name'], self.driver.files.get_file(file['id']).content)
+                    'files': (file['name'], (await self.driver.files.get_file(file['id'])).content)
                 }
             )['file_infos'][0]['id']
             for file in message.body['data']['post']['metadata']['files']
