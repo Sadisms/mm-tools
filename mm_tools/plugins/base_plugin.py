@@ -107,12 +107,12 @@ class BasePlugin(Plugin):
         files_ids = []
         for file in files:
             files_ids.append(
-                await self.driver.files.upload_file(
+                (await self.driver.files.upload_file(
                     data={'channel_id': channel_id},
                     files={
                         'files': file
                     }
-                )['file_infos'][0]['id']
+                ))['file_infos'][0]['id']
             )
 
         await self.driver.posts.create_post(
@@ -126,7 +126,7 @@ class BasePlugin(Plugin):
         return await self.driver.users.get_user(user_id=user_id)
 
     async def get_user_name(self, user_id: str):
-        return await self.get_user_info(user_id)['username']
+        return (await self.get_user_info(user_id))['username']
 
     async def get_user_full_name(self, user_id: str) -> str:
         user_info = await self.get_user_info(user_id)
@@ -136,7 +136,7 @@ class BasePlugin(Plugin):
         return user_info['username'].title()
 
     async def get_direct_from_user(self, user_id: str) -> str:
-        return await self.driver.channels.create_direct_channel([self.driver.user_id, user_id])["id"]
+        return (await self.driver.channels.create_direct_channel([self.driver.user_id, user_id]))["id"]
 
     async def direct_post(
             self,
@@ -179,11 +179,11 @@ class BasePlugin(Plugin):
 
     async def send_files_from_message(self, message: Message, channel_id: str) -> list[str]:
         return [
-            await self.driver.files.upload_file(
+            (await self.driver.files.upload_file(
                 data={'channel_id': channel_id},
                 files={
                     'files': (file['name'], (await self.driver.files.get_file(file['id'])).content)
                 }
-            )['file_infos'][0]['id']
+            ))['file_infos'][0]['id']
             for file in message.body['data']['post']['metadata']['files']
         ]
