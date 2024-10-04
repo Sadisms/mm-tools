@@ -77,7 +77,8 @@ class BasePlugin(Plugin):
             options={
                 'id': post_id,
                 'message': message,
-                'props': props
+                'props': props,
+                **kwargs
             }
         )
 
