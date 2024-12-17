@@ -36,7 +36,7 @@ class StateMachine:
         return self.state_data.get(user_id, {}).get('cache', {})
 
     def clear_values(self, user_id):
-        if self.state_data.get('user_id', {}).get('cache'):
+        if self.get_value(user_id):
             self.state_data[user_id].pop('cache')
 
     @staticmethod
