@@ -168,15 +168,22 @@ class FileElement(CustomDialogElement):
 
 
 class CustomDialog:    
-    def __init__(self, title: str, user_id: str, elements: List[CustomDialogElement],
-                 callback_url: Optional[str] = None, callback_id: Optional[str] = None,
-                 state: Optional[Dict[str, Any]] = None, 
-                 submit_button_text: Optional[str] = None,
-                 close_button_text: Optional[str] = None):
+    def __init__(
+        self, 
+        title: str, 
+        user_id: str, elements: List[CustomDialogElement],
+        callback_url_on_submit: Optional[str] = None,
+        callback_url_on_update: Optional[str] = None,
+        callback_id: Optional[str] = None,
+        state: Optional[Dict[str, Any]] = None, 
+        submit_button_text: Optional[str] = None,
+        close_button_text: Optional[str] = None
+):
         self.title = title
         self.user_id = user_id
         self.elements = elements
-        self.callback_url = callback_url
+        self.callback_url_on_submit = callback_url_on_submit
+        self.callback_url_on_update = callback_url_on_update
         self.callback_id = callback_id
         self.state = state or {}
         self.submit_button_text = submit_button_text
@@ -191,8 +198,10 @@ class CustomDialog:
             "elements": [element.to_dict() for element in self.elements]
         }
         
-        if self.callback_url:
-            result["callback_url"] = self.callback_url
+        if self.callback_url_on_submit:
+            result["callback_url_on_submit"] = self.callback_url_on_submit
+        if self.callback_url_on_update:
+            result["callback_url_on_update"] = self.callback_url_on_update
         if self.callback_id:
             result["callback_id"] = self.callback_id
         if self.state:
