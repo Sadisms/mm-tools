@@ -246,7 +246,8 @@ class CustomDialog:
             callback_id: Optional[str] = None,
             state: Optional[Dict[str, Any]] = None,
             submit_button_text: Optional[str] = None,
-            close_button_text: Optional[str] = None
+            close_button_text: Optional[str] = None,
+            bot_data: Optional[str] = None
     ):
         self.title = title
         self.user_id = user_id
@@ -258,6 +259,7 @@ class CustomDialog:
         self.submit_button_text = submit_button_text
         self.close_button_text = close_button_text
         self.dialog_id: Optional[str] = None
+        self.bot_data = bot_data
 
     def to_dict(self) -> Dict[str, Any]:
         result = {
@@ -278,7 +280,8 @@ class CustomDialog:
             result["submit_button_text"] = self.submit_button_text
         if self.close_button_text:
             result["close_button_text"] = self.close_button_text
-
+        if self.bot_data:
+            result["bot_data"] = self.bot_data
         return result
 
     def to_json(self) -> str:
