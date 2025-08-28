@@ -173,20 +173,6 @@ class RadioElement(CustomDialogElement):
         return result
 
 
-class StaticTextElement(CustomDialogElement):
-    def __init__(self, label: str, name: Optional[str] = None):
-        super().__init__("static_text", name or "", label, False, False)
-
-    def to_dict(self) -> Dict[str, Any]:
-        result = {
-            "type": self.type,
-            "label": self.label
-        }
-        if self.name:
-            result["name"] = self.name
-        return result
-
-
 class FileElement(CustomDialogElement):
     def __init__(
             self,
