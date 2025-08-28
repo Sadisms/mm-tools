@@ -241,6 +241,15 @@ class DateElement(CustomDialogElement):
         return result
 
 
+class StaticTextElement(CustomDialogElement):
+    def __init__(self, label: str, name: Optional[str] = None):
+        super().__init__("static_text", name or "", label, False, False)
+        
+    def to_dict(self) -> Dict[str, Any]:
+        result = super().to_dict()
+        return result
+
+
 class CustomDialog:
     def __init__(
             self,
