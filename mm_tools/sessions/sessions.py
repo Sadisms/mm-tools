@@ -19,6 +19,9 @@ class BaseSession:
     def get(self) -> dict:
         raise NotImplementedError
 
+    def get_all(self) -> list[dict]:
+        raise NotImplementedError
+
     def set(self, data: dict) -> None:
         raise NotImplementedError
 
@@ -87,6 +90,14 @@ class SQLiteSession(BaseSession):
         except Exception:
             self.clear()
             return {}
+
+    def get_all(self) -> list[dict]:
+        cur = self._client.cursor()
+        cur.execute(
+            f'SELECT data FROM {self._TABLE} WHERE user_id=?',
+            (self.user_id,)
+        )
+        return cur.fetchall()
 
     def set(self, data: dict) -> None:
         if not isinstance(data, dict):
