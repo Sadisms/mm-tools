@@ -1,6 +1,5 @@
 import importlib
 import io
-from functools import lru_cache
 from typing import Dict, Optional
 
 from mmpy_bot import Plugin, ActionEvent, Message
