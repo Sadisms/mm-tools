@@ -21,6 +21,7 @@ class Button(ActionElement):
         self.url = url
         self.style = style
         self.action_id = action_id
+        self.session_id = session_id
 
     def to_dict(self) -> dict:
         data = {
