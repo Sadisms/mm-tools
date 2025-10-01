@@ -47,7 +47,7 @@ class BasePlugin(Plugin):
                 if event.body.get("event") == "posted":
                     user_id = event.body.get("data", {}).get("post", {}).get("user_id")
                     text = event.body.get("data", {}).get("post", {}).get("message")
-                    message = f"Message from {user_id}: `{text}`"
+                    message = f"Message from {user_id}: `{repr(text)}`"
 
                 else:
                     user_id = event.body.get("user_id")
@@ -72,7 +72,7 @@ class BasePlugin(Plugin):
         """ Логирование """
 
         if event.body != BasePlugin.last_log:
-            await self.logging_event(event, function.matcher)
+            await self.logging_event(event, function.matcher.pattern)
             BasePlugin.last_log = event.body
 
         if self.sentry_module:
