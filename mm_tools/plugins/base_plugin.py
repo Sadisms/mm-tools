@@ -40,7 +40,7 @@ class BasePlugin(Plugin):
 
         super().__init__()
 
-    async def logging_event(self, event: EventWrapper, matcher: str) -> None:
+    async def logging_event(self, event: EventWrapper, matcher: str = None) -> None:
         if self.logger:
             if self.log_raw_json:
                 message = ""
@@ -51,8 +51,10 @@ class BasePlugin(Plugin):
 
                 else:
                     user_id = event.body.get("user_id")
-                    message = f"Event from {user_id}, action: '{matcher}'"
-
+                    if matcher:
+                        message = f"Event from {user_id}, action: '{matcher}'"
+                    else:
+                        message = f"Event from {user_id}"
                 
                 self.logger.info(
                     message,
