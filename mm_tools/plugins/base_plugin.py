@@ -132,12 +132,12 @@ class BasePlugin(Plugin):
         files_ids = []
         for file in files:
             files_ids.append(
-                self.driver.files.upload_file(
+                (self.driver.files.upload_file(
                     data={'channel_id': channel_id},
                     files={
                         'files': file
                     }
-                )['file_infos'][0]['id']
+                ))['file_infos'][0]['id']
             )
 
         self.driver.posts.create_post(
@@ -147,15 +147,12 @@ class BasePlugin(Plugin):
             }
         )
 
-    @lru_cache
     def get_user_info(self, user_id: str) -> dict:
         return self.driver.users.get_user(user_id=user_id)
 
-    @lru_cache
     def get_user_name(self, user_id: str):
-        return self.get_user_info(user_id)['username']
+        return (self.get_user_info(user_id))['username']
 
-    @lru_cache
     def get_user_full_name(self, user_id: str) -> str:
         user_info = self.get_user_info(user_id)
         if user_info['first_name'] and user_info['last_name']:
@@ -163,9 +160,8 @@ class BasePlugin(Plugin):
 
         return user_info['username'].title()
 
-    @lru_cache
     def get_direct_from_user(self, user_id: str) -> str:
-        return self.driver.channels.create_direct_channel([self.driver.user_id, user_id])["id"]
+        return (self.driver.channels.create_direct_channel([self.driver.user_id, user_id]))["id"]
 
     def direct_post(
             self,
@@ -208,11 +204,11 @@ class BasePlugin(Plugin):
 
     def send_files_from_message(self, message: Message, channel_id: str) -> list[str]:
         return [
-            self.driver.files.upload_file(
+            (self.driver.files.upload_file(
                 data={'channel_id': channel_id},
                 files={
-                    'files': (file['name'], self.driver.files.get_file(file['id']).content)
+                    'files': (file['name'], (self.driver.files.get_file(file['id'])).content)
                 }
-            )['file_infos'][0]['id']
+            ))['file_infos'][0]['id']
             for file in message.body['data']['post']['metadata']['files']
         ]

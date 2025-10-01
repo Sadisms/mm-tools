@@ -13,13 +13,15 @@ class Button(ActionElement):
             action_id: str,
             url: str,
             value: str = None,
-            style: str = None
+            style: str = None,
+            session_id: str = None
     ):
         self.value = value
         self.text = text
         self.url = url
         self.style = style
         self.action_id = action_id
+        self.session_id = session_id
 
     def to_dict(self) -> dict:
         data = {
@@ -28,7 +30,8 @@ class Button(ActionElement):
             "integration": {
                 "url": self.url + f'/{self.action_id}',
                 "context": {
-                    "value": self.value
+                    "value": self.value,
+                    "session_id": self.session_id
                 }
             }
         }
@@ -82,13 +85,15 @@ class Select(ActionElement):
             options: list[SelectOption],
             text: str = '',
             block_id: str = None,
-            default: SelectOption = None
+            default: SelectOption = None,
+            session_id: str = None
     ):
         self.text = text
         self.action_id = action_id
         self.options = options
         self.url = url
         self.block_id = block_id
+        self.session_id = session_id
 
         if default:
             self.default = default.value
@@ -104,7 +109,8 @@ class Select(ActionElement):
             "integration": {
                 "url": self.url + f'/{self.action_id}',
                 "context": {
-                    "block_id": self.block_id
+                    "block_id": self.block_id,
+                    "session_id": self.session_id
                 }
             },
             "options": [
@@ -120,12 +126,14 @@ class SelectUsers(ActionElement):
             action_id: str,
             url: str,
             text: str = '',
-            block_id: str = None
+            block_id: str = None,
+            session_id: str = None
     ):
         self.text = text
         self.action_id = action_id
         self.url = url
         self.block_id = block_id
+        self.session_id = session_id
 
     def to_dict(self):
         return {
@@ -135,7 +143,8 @@ class SelectUsers(ActionElement):
             "integration": {
                 "url": self.url + f'/{self.action_id}',
                 "context": {
-                    "block_id": self.block_id
+                    "block_id": self.block_id,
+                    "session_id": self.session_id
                 }
             },
         }

@@ -233,7 +233,8 @@ class Dialog:
             trigger_id: str,
             url: str,
             callback_id: str = "",
-            introduction_text: str = ""
+            introduction_text: str = "",
+            session_id: str = ""
     ):
         self.title = title
         self.action_id = action_id
@@ -242,6 +243,7 @@ class Dialog:
         self.trigger_id = trigger_id
         self.url = url
         self.introduction_text = introduction_text
+        self.session_id = session_id
 
     def to_dict(self) -> dict:
         return {
@@ -251,6 +253,7 @@ class Dialog:
                 'title': self.title,
                 'introduction_text': self.introduction_text,
                 'callback_id': f"{uuid4().hex}:{self.callback_id}",
+                'state': self.session_id,
                 'elements': [
                     x.to_dict()
                     for x in self.elements
