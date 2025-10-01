@@ -40,15 +40,22 @@ class BasePlugin(Plugin):
 
         super().__init__()
 
-    async def logging_event(self, event: EventWrapper) -> None:
+    async def logging_event(self, event: EventWrapper, matcher: str) -> None:
         if self.logger:
             if self.log_raw_json:
-                event_type = "Event"
-                if event.body.get("data", {}).get("post", {}).get("message", ""):
-                    event_type = "Message"
+                message = ""
+                if event.body.get("event") == "posted":
+                    user_id = event.body.get("data", {}).get("post", {}).get("user_id")
+                    text = event.body.get("data", {}).get("post", {}).get("message")
+                    message = f"Message from {user_id}: `{text}`"
+
+                else:
+                    user_id = event.body.get("user_id")
+                    message = f"Event from {user_id}, action: `{matcher}`"
+
                 
                 self.logger.info(
-                    event_type,
+                    message,
                     extra={
                         "raw_json": json.dumps(event.body, indent=2, ensure_ascii=False)
                     }
@@ -65,7 +72,7 @@ class BasePlugin(Plugin):
         """ Логирование """
 
         if event.body != BasePlugin.last_log:
-            await self.logging_event(event)
+            await self.logging_event(event, function.matcher)
             BasePlugin.last_log = event.body
 
         if self.sentry_module:
