@@ -1,5 +1,8 @@
 import importlib
 import io
+import json
+from functools import lru_cache
+from logging import Logger
 from typing import Dict, Optional
 
 from mmpy_bot import Plugin, ActionEvent, Message
@@ -18,11 +21,13 @@ class BasePlugin(Plugin):
 
     def __init__(
             self,
-            logger,
+            logger: Logger = None,
+            log_raw_json: bool = False,
             sentry_profile: bool = False,
             sentry_profile_prefix: str = None
     ):
         self.logger = logger
+        self.log_raw_json = log_raw_json
 
         self.sentry_profile_prefix = sentry_profile_prefix
         self.sentry_module = None
@@ -35,8 +40,28 @@ class BasePlugin(Plugin):
 
         super().__init__()
 
-    async def logging_event(self, event: EventWrapper) -> None:
-        self.logger.info(event.body)
+    async def logging_event(self, event: EventWrapper, matcher: str) -> None:
+        if self.logger:
+            if self.log_raw_json:
+                message = ""
+                if event.body.get("event") == "posted":
+                    user_id = event.body.get("data", {}).get("post", {}).get("user_id")
+                    text = event.body.get("data", {}).get("post", {}).get("message")
+                    message = f"Message from {user_id}: {repr(text)}"
+
+                else:
+                    user_id = event.body.get("user_id")
+                    message = f"Event from {user_id}, action: '{matcher}'"
+
+                
+                self.logger.info(
+                    message,
+                    extra={
+                        "raw_json": json.dumps(event.body, indent=2, ensure_ascii=False)
+                    }
+                )
+            else:
+                self.logger.info(event.body)
 
     async def call_function(
             self,
@@ -47,7 +72,7 @@ class BasePlugin(Plugin):
         """ Логирование """
 
         if event.body != BasePlugin.last_log:
-            await self.logging_event(event)
+            await self.logging_event(event, function.matcher.pattern)
             BasePlugin.last_log = event.body
 
         if self.sentry_module:

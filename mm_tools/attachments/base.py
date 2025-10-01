@@ -157,7 +157,16 @@ class Attachment:
             text: str = None,
             title: str = None,
             title_link: str = None,
-            color: str = None
+            color: str = None,
+            fallback: str = None,
+            pretext: str = None,
+            author_name: str = None,
+            author_link: str = None,
+            author_icon: str = None,
+            image_url: str = None,
+            thumb_url: str = None,
+            footer: str = None,
+            footer_icon: str = None
     ):
         self.actions = actions or []
         self.fields = fields or []
@@ -165,9 +174,32 @@ class Attachment:
         self.title_link = title_link
         self.title = title
         self.color = color
+        self.fallback = fallback
+        self.pretext = pretext
+        self.author_name = author_name
+        self.author_link = author_link
+        self.author_icon = author_icon
+        self.image_url = image_url
+        self.thumb_url = thumb_url
+        self.footer = footer
+        self.footer_icon = footer_icon
 
     def to_dict(self) -> dict:
         attachments = {'attachments': [{}]}
+
+        # Fields from Mattermost attachment specification
+        if self.fallback:
+            attachments['attachments'][0]['fallback'] = self.fallback
+
+        if self.pretext:
+            attachments['attachments'][0]['pretext'] = self.pretext
+
+        if self.author_name:
+            attachments['attachments'][0]['author_name'] = self.author_name
+            if self.author_link:
+                attachments['attachments'][0]['author_link'] = self.author_link
+            if self.author_icon:
+                attachments['attachments'][0]['author_icon'] = self.author_icon
 
         if self.fields:
             attachments['attachments'][0]['fields'] = [
@@ -192,6 +224,17 @@ class Attachment:
 
         if self.color:
             attachments['attachments'][0]['color'] = self.color
+
+        if self.image_url:
+            attachments['attachments'][0]['image_url'] = self.image_url
+
+        if self.thumb_url:
+            attachments['attachments'][0]['thumb_url'] = self.thumb_url
+
+        if self.footer:
+            attachments['attachments'][0]['footer'] = self.footer
+            if self.footer_icon:
+                attachments['attachments'][0]['footer_icon'] = self.footer_icon
 
         return attachments
 
