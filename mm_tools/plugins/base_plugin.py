@@ -1,7 +1,6 @@
 import importlib
 import io
 import json
-from functools import lru_cache
 from logging import Logger
 from typing import Dict, Optional
 
@@ -40,7 +39,7 @@ class BasePlugin(Plugin):
 
         super().__init__()
 
-    async def logging_event(self, event: EventWrapper, matcher: str) -> None:
+    async def logging_event(self, event: EventWrapper, matcher: str = None) -> None:
         if self.logger:
             if self.log_raw_json:
                 message = ""
@@ -51,8 +50,10 @@ class BasePlugin(Plugin):
 
                 else:
                     user_id = event.body.get("user_id")
-                    message = f"Event from {user_id}, action: '{matcher}'"
-
+                    if matcher:
+                        message = f"Event from {user_id}, action: '{matcher}'"
+                    else:
+                        message = f"Event from {user_id}"
                 
                 self.logger.info(
                     message,
@@ -212,3 +213,135 @@ class BasePlugin(Plugin):
             ))['file_infos'][0]['id']
             for file in message.body['data']['post']['metadata']['files']
         ]
+
+
+class AsyncBasePlugin(BasePlugin):
+    async def update_message(
+            self,
+            post_id: str,
+            message: str,
+            props: dict = None,
+            **kwargs
+    ) -> None:
+        if not props:
+            props = {}
+
+        await self.driver.posts.update_post(
+            post_id=post_id,
+            options={
+                'id': post_id,
+                'message': message,
+                'props': props,
+                **kwargs
+            }
+        )
+
+    async def delete_message(
+            self,
+            event: ActionEvent = None,
+            post_id: str = None
+    ) -> None:
+        if event:
+            post_id = event.post_id
+
+        await self.driver.posts.delete_post(
+            post_id=post_id
+        )
+
+    async def get_file(
+            self,
+            file_id: str
+    ) -> bytes:
+        resp = await self.driver.files.get_file(file_id)
+        return resp.content
+
+    async def upload_file(
+            self,
+            channel_id: str,
+            files: list[tuple[str, io.BytesIO]],
+    ) -> None:
+        files_ids = []
+        for file in files:
+            upload_resp = await self.driver.files.upload_file(
+                data={'channel_id': channel_id},
+                files={
+                    'files': file
+                }
+            )
+            files_ids.append(upload_resp['file_infos'][0]['id'])
+
+        await self.driver.posts.create_post(
+            options={
+                'channel_id': channel_id,
+                'file_ids': files_ids
+            }
+        )
+
+    async def get_user_info(self, user_id: str) -> dict:
+        return await self.driver.users.get_user(user_id=user_id)
+
+    async def get_user_name(self, user_id: str):
+        user_info = await self.get_user_info(user_id)
+        return user_info['username']
+
+    async def get_user_full_name(self, user_id: str) -> str:
+        user_info = await self.get_user_info(user_id)
+        if user_info['first_name'] and user_info['last_name']:
+            return f"{user_info['first_name']} {user_info['last_name']}"
+        return user_info['username'].title()
+
+    async def get_direct_from_user(self, user_id: str) -> str:
+        channel = await self.driver.channels.create_direct_channel([self.driver.user_id, user_id])
+        return channel["id"]
+
+    async def direct_post(
+            self,
+            receiver_id: str,
+            message: str = "",
+            file_paths: Optional[str] = None,
+            root_id: str = "",
+            props=None,
+            ephemeral_user_id: Optional[str] = None,
+    ) -> Dict:
+        if props is None:
+            props = {}
+
+        direct_id = await self.get_direct_from_user(receiver_id)
+
+        return await self.driver.create_post(
+            channel_id=direct_id,
+            message=message,
+            props=props,
+            root_id=root_id,
+            file_paths=file_paths,
+            ephemeral_user_id=ephemeral_user_id
+        )
+
+    async def message_to_action_event(self, message: Message, context: dict = None, post_id: str = None):
+        user_name = await self.get_user_name(message.user_id)
+        action_event = ActionEvent(
+            body={
+                'channel_id': message.channel_id,
+                'context': context or {},
+                'post_id': post_id,
+                'user_id': message.user_id,
+                'user_name': user_name,
+                'team_id': message.team_id
+            },
+            request_id='',
+            webhook_id=''
+        )
+        return action_event
+
+    async def send_files_from_message(self, message: Message, channel_id: str) -> list[str]:
+        files_ids = []
+        for file in message.body['data']['post']['metadata']['files']:
+            file_content = await self.driver.files.get_file(file['id'])
+            upload_resp = await self.driver.files.upload_file(
+                data={'channel_id': channel_id},
+                files={
+                    'files': (file['name'], file_content.content)
+                }
+            )
+            files_ids.append(upload_resp['file_infos'][0]['id'])
+        return files_ids
