@@ -1,4 +1,7 @@
+import json
 from uuid import uuid4
+
+from mm_tools.helpers import compress_json
 
 
 class DialogElement:
@@ -331,7 +334,8 @@ class Dialog:
             session_id: str = "",
             submit_label: str = None,
             notify_on_cancel: bool = False,
-            icon_url: str = None
+            icon_url: str = None,
+            payload: dict = None
     ):
         self.title = title
         self.action_id = action_id
@@ -344,8 +348,14 @@ class Dialog:
         self.submit_label = submit_label
         self.notify_on_cancel = notify_on_cancel
         self.icon_url = icon_url
+        self.payload = payload
 
     def to_dict(self) -> dict:
+        state_data = {'session_id': self.session_id}
+        
+        if self.payload:
+            state_data['payload'] = compress_json(self.payload)
+        
         return {
             'trigger_id': self.trigger_id,
             'url': self.url + '/' + self.action_id,
@@ -353,7 +363,7 @@ class Dialog:
                 'title': self.title,
                 'introduction_text': self.introduction_text,
                 'callback_id': f"{uuid4().hex}:{self.callback_id}",
-                'state': self.session_id,
+                'state': json.dumps(state_data, separators=(',', ':')),
                 'elements': [
                     x.to_dict()
                     for x in self.elements
