@@ -1,5 +1,7 @@
 import lzma
 import base64
+import json
+
 import msgpack
 
 
@@ -13,3 +15,13 @@ def decompress_json(compressed_str: str) -> dict:
     compressed = base64.b85decode(compressed_str.encode('ascii'))
     packed = lzma.decompress(compressed)
     return msgpack.unpackb(packed, raw=False)
+
+
+def read_dialog_state(state: str) -> dict:
+    try:
+        data = json.loads(state)
+        if data.get('payload'):
+            data['payload'] = decompress_json(data['payload'])
+    except json.JSONDecodeError:
+        return {}
+    return data
