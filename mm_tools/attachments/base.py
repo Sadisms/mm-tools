@@ -1,5 +1,7 @@
 from typing import List, Union
 
+from mm_tools.helpers import compress_json
+
 
 class ActionElement:
     def to_dict(self):
@@ -14,7 +16,8 @@ class Button(ActionElement):
             url: str,
             value: str = None,
             style: str = None,
-            session_id: str = None
+            session_id: str = None,
+            payload: dict = None
     ):
         self.value = value
         self.text = text
@@ -22,17 +25,23 @@ class Button(ActionElement):
         self.style = style
         self.action_id = action_id
         self.session_id = session_id
+        self.payload = payload
 
     def to_dict(self) -> dict:
+        context = {
+            "value": self.value,
+            "session_id": self.session_id
+        }
+        
+        if self.payload:
+            context["payload"] = compress_json(self.payload)
+        
         data = {
             "name": self.text,
             "type": "button",
             "integration": {
                 "url": self.url + f'/{self.action_id}',
-                "context": {
-                    "value": self.value,
-                    "session_id": self.session_id
-                }
+                "context": context
             }
         }
 
@@ -86,7 +95,8 @@ class Select(ActionElement):
             text: str = '',
             block_id: str = None,
             default: SelectOption = None,
-            session_id: str = None
+            session_id: str = None,
+            payload: dict = None
     ):
         self.text = text
         self.action_id = action_id
@@ -94,6 +104,7 @@ class Select(ActionElement):
         self.url = url
         self.block_id = block_id
         self.session_id = session_id
+        self.payload = payload
 
         if default:
             self.default = default.value
@@ -102,16 +113,21 @@ class Select(ActionElement):
             self.default = None
 
     def to_dict(self):
+        context = {
+            "block_id": self.block_id,
+            "session_id": self.session_id
+        }
+        
+        if self.payload:
+            context["payload"] = compress_json(self.payload)
+        
         return {
             "name": self.text,
             "type": "select",
             "default": self.default,
             "integration": {
                 "url": self.url + f'/{self.action_id}',
-                "context": {
-                    "block_id": self.block_id,
-                    "session_id": self.session_id
-                }
+                "context": context
             },
             "options": [
                 x.to_dict()
@@ -127,25 +143,32 @@ class SelectUsers(ActionElement):
             url: str,
             text: str = '',
             block_id: str = None,
-            session_id: str = None
+            session_id: str = None,
+            payload: dict = None
     ):
         self.text = text
         self.action_id = action_id
         self.url = url
         self.block_id = block_id
         self.session_id = session_id
+        self.payload = payload
 
     def to_dict(self):
+        context = {
+            "block_id": self.block_id,
+            "session_id": self.session_id
+        }
+        
+        if self.payload:
+            context["payload"] = compress_json(self.payload)
+        
         return {
             "name": self.text,
             "type": "select",
             "data_source": "users",
             "integration": {
                 "url": self.url + f'/{self.action_id}',
-                "context": {
-                    "block_id": self.block_id,
-                    "session_id": self.session_id
-                }
+                "context": context
             },
         }
 

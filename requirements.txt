@@ -3,3 +3,4 @@ peewee~=3.16.0
 peewee-async~=0.8.0
 peewee-moves @ git+https://github.com/sadisms/peewee-moves.git
 aiopg~=1.4.0
+msgpack~=1.1.2
