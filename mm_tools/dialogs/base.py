@@ -18,6 +18,11 @@ class DialogElement:
         self.data_source = ''
         self.min_length = None
         self.max_length = None
+        self.min_date = None
+        self.max_date = None
+        self.time_interval = None
+        self.multiselect = False
+        self.data_source_url = None
 
     def to_dict(self) -> dict:
         data = {
@@ -40,6 +45,16 @@ class DialogElement:
             data['min_length'] = self.min_length
         if self.max_length is not None:
             data['max_length'] = self.max_length
+        if self.min_date is not None:
+            data['min_date'] = self.min_date
+        if self.max_date is not None:
+            data['max_date'] = self.max_date
+        if self.time_interval is not None:
+            data['time_interval'] = self.time_interval
+        if self.multiselect:
+            data['multiselect'] = self.multiselect
+        if self.data_source_url is not None:
+            data['data_source_url'] = self.data_source_url
 
         return data
 
@@ -105,9 +120,10 @@ class StaticSelectElement(DialogElement):
             element_id: str,
             options: list[ElementOption],
             optional: bool = False,
-            default: ElementOption = None,
+            default: ElementOption | str = None,
             help_text: str = None,
-            placeholder: str = None
+            placeholder: str = None,
+            multiselect: bool = False
     ):
         super().__init__()
         self.type = 'select'
@@ -117,9 +133,10 @@ class StaticSelectElement(DialogElement):
         self.element_id = element_id
         self.help_text = help_text
         self.placeholder = placeholder
+        self.multiselect = multiselect
 
         if default:
-            self.default = default.value
+            self.default = default if isinstance(default, str) else default.value
 
 
 class SelectChannelElement(DialogElement):
@@ -128,9 +145,10 @@ class SelectChannelElement(DialogElement):
             display_name: str,
             element_id: str,
             optional: bool = False,
-            default: ElementOption = None,
+            default: ElementOption | str = None,
             help_text: str = None,
-            placeholder: str = None
+            placeholder: str = None,
+            multiselect: bool = False
     ):
         super().__init__()
         self.type = 'select'
@@ -140,9 +158,10 @@ class SelectChannelElement(DialogElement):
         self.data_source = 'channels'
         self.help_text = help_text
         self.placeholder = placeholder
+        self.multiselect = multiselect
 
         if default:
-            self.default = default.value
+            self.default = default if isinstance(default, str) else default.value
 
 
 class SelectUserElement(DialogElement):
@@ -151,9 +170,10 @@ class SelectUserElement(DialogElement):
             display_name: str,
             element_id: str,
             optional: bool = False,
-            default: ElementOption = None,
+            default: str = None,
             help_text: str = None,
-            placeholder: str = None
+            placeholder: str = None,
+            multiselect: bool = False
     ):
         super().__init__()
         self.type = 'select'
@@ -163,9 +183,10 @@ class SelectUserElement(DialogElement):
         self.data_source = 'users'
         self.help_text = help_text
         self.placeholder = placeholder
+        self.multiselect = multiselect
 
         if default:
-            self.default = default.value
+            self.default = default
 
 
 class InputTextElement(DialogElement):
@@ -321,6 +342,93 @@ class InputUrlElement(DialogElement):
         self.placeholder = placeholder
 
 
+class DateElement(DialogElement):
+    """Date picker element for selecting dates without time.
+    
+    Minimum Server Version: 11.1
+    """
+    def __init__(
+            self,
+            display_name: str,
+            element_id: str,
+            default: str = None,
+            optional: bool = False,
+            help_text: str = None,
+            placeholder: str = None,
+            min_date: str = None,
+            max_date: str = None
+    ):
+        super().__init__()
+        self.type = 'date'
+        self.optional = optional
+        self.display_name = display_name
+        self.element_id = element_id
+        self.default = default
+        self.help_text = help_text
+        self.placeholder = placeholder
+        self.min_date = min_date
+        self.max_date = max_date
+
+
+class DateTimeElement(DialogElement):
+    """DateTime picker element for selecting date and time with timezone support.
+    
+    Minimum Server Version: 11.1
+    """
+    def __init__(
+            self,
+            display_name: str,
+            element_id: str,
+            default: str = None,
+            optional: bool = False,
+            help_text: str = None,
+            placeholder: str = None,
+            min_date: str = None,
+            max_date: str = None,
+            time_interval: int = 60
+    ):
+        super().__init__()
+        self.type = 'datetime'
+        self.optional = optional
+        self.display_name = display_name
+        self.element_id = element_id
+        self.default = default
+        self.help_text = help_text
+        self.placeholder = placeholder
+        self.min_date = min_date
+        self.max_date = max_date
+        self.time_interval = time_interval
+
+
+class DynamicSelectElement(DialogElement):
+    """Select element with dynamic options loaded from external API.
+    
+    Minimum Server Version: 11.0
+    """
+    def __init__(
+            self,
+            display_name: str,
+            element_id: str,
+            data_source_url: str,
+            optional: bool = False,
+            default: str = None,
+            help_text: str = None,
+            placeholder: str = None,
+            multiselect: bool = False
+    ):
+        super().__init__()
+        self.type = 'select'
+        self.data_source = 'dynamic'
+        self.data_source_url = data_source_url
+        self.optional = optional
+        self.display_name = display_name
+        self.element_id = element_id
+        self.default = default
+        self.help_text = help_text
+        self.placeholder = placeholder
+        self.multiselect = multiselect
+
+
 class Dialog:
     def __init__(
             self,
@@ -335,7 +443,9 @@ class Dialog:
             submit_label: str = None,
             notify_on_cancel: bool = False,
             icon_url: str = None,
-            payload: dict = None
+            payload: dict = None,
+            is_multistep: bool = False,
+            refresh_on_select: bool = False
     ):
         self.title = title
         self.action_id = action_id
@@ -349,6 +459,8 @@ class Dialog:
         self.notify_on_cancel = notify_on_cancel
         self.icon_url = icon_url
         self.payload = payload
+        self.is_multistep = is_multistep
+        self.refresh_on_select = refresh_on_select
 
     def to_dict(self) -> dict:
         state_data = {'session_id': self.session_id}
@@ -370,6 +482,8 @@ class Dialog:
                 ],
                 **({'submit_label': self.submit_label} if self.submit_label else {}),
                 **({'notify_on_cancel': self.notify_on_cancel} if self.notify_on_cancel else {}),
-                **({'icon_url': self.icon_url} if self.icon_url else {})
+                **({'icon_url': self.icon_url} if self.icon_url else {}),
+                **({'is_multistep': self.is_multistep} if self.is_multistep else {}),
+                **({'refresh_on_select': self.refresh_on_select} if self.refresh_on_select else {})
             }
         }
