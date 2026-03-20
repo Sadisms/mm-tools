@@ -23,6 +23,7 @@ class DialogElement:
         self.time_interval = None
         self.multiselect = False
         self.data_source_url = None
+        self.refresh = False
 
     def to_dict(self) -> dict:
         data = {
@@ -55,6 +56,8 @@ class DialogElement:
             data['multiselect'] = self.multiselect
         if self.data_source_url is not None:
             data['data_source_url'] = self.data_source_url
+        if self.refresh:
+            data['refresh'] = True
 
         return data
 
@@ -123,7 +126,8 @@ class StaticSelectElement(DialogElement):
             default: ElementOption | str = None,
             help_text: str = None,
             placeholder: str = None,
-            multiselect: bool = False
+            multiselect: bool = False,
+            refresh: bool = False
     ):
         super().__init__()
         self.type = 'select'
@@ -134,6 +138,7 @@ class StaticSelectElement(DialogElement):
         self.help_text = help_text
         self.placeholder = placeholder
         self.multiselect = multiselect
+        self.refresh = refresh
 
         if default:
             self.default = default if isinstance(default, str) else default.value
@@ -445,7 +450,8 @@ class Dialog:
             icon_url: str = None,
             payload: dict = None,
             is_multistep: bool = False,
-            refresh_on_select: bool = False
+            source_url: str | None = None,
+            step: str = ""
     ):
         self.title = title
         self.action_id = action_id
@@ -460,30 +466,40 @@ class Dialog:
         self.icon_url = icon_url
         self.payload = payload
         self.is_multistep = is_multistep
-        self.refresh_on_select = refresh_on_select
+        self.source_url = source_url
+        self.step = step
 
-    def to_dict(self) -> dict:
-        state_data = {'session_id': self.session_id}
-        
+    def _build_dialog_dict(self) -> dict:
+        state_data: dict = {'session_id': self.session_id}
+        if self.step:
+            state_data['step'] = self.step
         if self.payload:
             state_data['payload'] = compress_json(self.payload)
-        
+
+        return {
+            'title': self.title,
+            'introduction_text': self.introduction_text,
+            'callback_id': f"{uuid4().hex}:{self.callback_id}",
+            'state': json.dumps(state_data, separators=(',', ':')),
+            'elements': [x.to_dict() for x in self.elements],
+            **({'submit_label': self.submit_label} if self.submit_label else {}),
+            **({'notify_on_cancel': self.notify_on_cancel} if self.notify_on_cancel else {}),
+            **({'icon_url': self.icon_url} if self.icon_url else {}),
+            **({'is_multistep': self.is_multistep} if self.is_multistep else {}),
+            **({'source_url': self.source_url} if self.source_url else {}),
+        }
+
+    def to_dict(self) -> dict:
         return {
             'trigger_id': self.trigger_id,
             'url': self.url + '/' + self.action_id,
-            'dialog': {
-                'title': self.title,
-                'introduction_text': self.introduction_text,
-                'callback_id': f"{uuid4().hex}:{self.callback_id}",
-                'state': json.dumps(state_data, separators=(',', ':')),
-                'elements': [
-                    x.to_dict()
-                    for x in self.elements
-                ],
-                **({'submit_label': self.submit_label} if self.submit_label else {}),
-                **({'notify_on_cancel': self.notify_on_cancel} if self.notify_on_cancel else {}),
-                **({'icon_url': self.icon_url} if self.icon_url else {}),
-                **({'is_multistep': self.is_multistep} if self.is_multistep else {}),
-                **({'refresh_on_select': self.refresh_on_select} if self.refresh_on_select else {})
-            }
+            'dialog': self._build_dialog_dict(),
         }
+
+    def to_form_response(self) -> dict:
+        """Returns the response payload for multistep step transitions and field refresh.
+
+        Use when responding to dialog_submission (intermediate step) or
+        dialog_field_refresh events instead of closing the dialog.
+        """
+        return {'type': 'form', 'form': self._build_dialog_dict()}
