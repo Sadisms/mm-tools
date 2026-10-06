@@ -23,10 +23,12 @@ class BasePlugin(Plugin):
             logger: Logger = None,
             log_raw_json: bool = False,
             sentry_profile: bool = False,
-            sentry_profile_prefix: str = None
+            sentry_profile_prefix: str = None,
+            raw_json_as_dict: bool = False
     ):
         self.logger = logger
         self.log_raw_json = log_raw_json
+        self.raw_json_as_dict = raw_json_as_dict
 
         self.sentry_profile_prefix = sentry_profile_prefix
         self.sentry_module = None
@@ -55,10 +57,15 @@ class BasePlugin(Plugin):
                     else:
                         message = f"Event from {user_id}"
                 
+                if self.raw_json_as_dict:
+                    raw_json = event.body
+                else:
+                    raw_json = json.dumps(event.body, indent=2, ensure_ascii=False)
+
                 self.logger.info(
                     message,
                     extra={
-                        "raw_json": json.dumps(event.body, indent=2, ensure_ascii=False)
+                        "raw_json": raw_json
                     }
                 )
             else:
