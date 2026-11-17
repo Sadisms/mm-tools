@@ -69,7 +69,8 @@ class ElementOption:
             value: str
     ):
         self.text = text
-        self.value = value
+        # Mattermost rejects the whole dialog if an option value is not a string
+        self.value = str(value)
 
     def to_dict(self) -> dict:
         return {
